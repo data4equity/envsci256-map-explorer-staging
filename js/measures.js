@@ -1,0 +1,48 @@
+/* CDC PLACES 2025 measure labels and survey years, copied from the column descriptions of
+   data.cdc.gov dataset yjkw-uj5s (PLACES: Census Tract Data (GIS Friendly Format), 2025 release),
+   fetched 2026-11-18. Regenerate rather than hand-edit. */
+(function (root) {
+  const PLACES_MEASURES = {
+    ACCESS2: { label: "Lack of health insurance among adults aged 18-64 years", year: 2023 },
+    ARTHRITIS: { label: "Arthritis among adults", year: 2023 },
+    BINGE: { label: "Binge drinking among adults", year: 2023 },
+    BPHIGH: { label: "High blood pressure among adults", year: 2023 },
+    BPMED: { label: "Taking medicine to control high blood pressure among adults with high blood pressure", year: 2023 },
+    CANCER: { label: "Cancer (non-skin) or melanoma among adults", year: 2023 },
+    CASTHMA: { label: "Current asthma among adults", year: 2023 },
+    CHD: { label: "Coronary heart disease among adults", year: 2023 },
+    CHECKUP: { label: "Routine checkup within the past year among adults", year: 2023 },
+    CHOLSCREEN: { label: "Cholesterol screening within the past 5 years among adults", year: 2023 },
+    COGNITION: { label: "Cognitive disability among adults", year: 2023 },
+    COLON_SCREEN: { label: "Colorectal cancer screening among adults aged 45\u201375 years", year: 2022 },
+    COPD: { label: "Chronic obstructive pulmonary disease among adults", year: 2023 },
+    CSMOKING: { label: "Current cigarette smoking among adults", year: 2023 },
+    DENTAL: { label: "Visited dentist or dental clinic in the past year among adults", year: 2022 },
+    DEPRESSION: { label: "Depression among adults", year: 2023 },
+    DIABETES: { label: "Diagnosed diabetes among adults", year: 2023 },
+    DISABILITY: { label: "Any disability among adults", year: 2023 },
+    EMOTIONSPT: { label: "Lack of social and emotional support among adults", year: 2023 },
+    FOODINSECU: { label: "Food insecurity in the past 12 months among adults", year: 2023 },
+    FOODSTAMP: { label: "Received food stamps in the past 12 months among adults", year: 2023 },
+    GHLTH: { label: "Fair or poor health among adults", year: 2023 },
+    HEARING: { label: "Hearing disability among adults", year: 2023 },
+    HIGHCHOL: { label: "High cholesterol among adults who have ever been screened", year: 2023 },
+    HOUSINSECU: { label: "Housing insecurity in the past 12 months among adults", year: 2023 },
+    INDEPLIVE: { label: "Independent living disability among adults", year: 2023 },
+    LACKTRPT: { label: "Lack of reliable transportation in the past 12 months among adults", year: 2023 },
+    LONELINESS: { label: "Loneliness among adults", year: 2023 },
+    LPA: { label: "No leisure-time physical activity among adults", year: 2023 },
+    MAMMOUSE: { label: "Mammography use among women aged 50\u201374 years", year: 2022 },
+    MHLTH: { label: "Frequent mental distress among adults", year: 2023 },
+    OBESITY: { label: "Obesity among adults", year: 2023 },
+    PHLTH: { label: "Frequent physical distress among adults", year: 2023 },
+    SELFCARE: { label: "Self-care disability among adults", year: 2023 },
+    SHUTUTILITY: { label: "Utility services threat in the past 12 months among adults", year: 2023 },
+    SLEEP: { label: "Short sleep duration among adults", year: 2022 },
+    STROKE: { label: "Stroke among adults", year: 2023 },
+    TEETHLOST: { label: "All teeth lost among adults aged >=65 years", year: 2022 },
+    VISION: { label: "Vision disability among adults", year: 2023 },
+  };
+  if (typeof module === "object" && module.exports) module.exports = PLACES_MEASURES;
+  else root.PLACES_MEASURES = PLACES_MEASURES;
+})(typeof self !== "undefined" ? self : this);

@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- staging:start -->
+<meta name="robots" content="noindex, nofollow">
+<!-- staging:end -->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ENVSCI 256 Map Explorer</title>
+<meta name="description" content="Course map explorer for ENVSCI 256 Health and Medical Geography: filter, color, buffer and save maps of Massachusetts census tracts.">
+<link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+<link rel="stylesheet" href="css/explorer.css?v=20261124a">
+</head>
+<body>
+<!-- staging:start -->
+<div id="staging-banner" role="note" style="background:#ffe9a8;color:#5c3b00;font:600 15px/1.4 system-ui,sans-serif;padding:8px 16px;text-align:center;border-bottom:1px solid #d9b85c">Test copy for the instructor. Students use the live map explorer.</div>
+<!-- staging:end -->
+<header class="site-head">
+  <div class="wrap">
+    <p class="kicker">ENVSCI 256 · Health and Medical Geography</p>
+    <h1>Course Map Explorer</h1>
+    <nav class="tabs" role="tablist" aria-label="Assignments">
+      <a href="#exercise-4" role="tab" data-tab="exercise-4" aria-selected="true">Exercise 4</a>
+      <a href="#midterm" role="tab" data-tab="midterm" aria-selected="false">Midterm</a>
+      <a href="#term-project" role="tab" data-tab="term-project" aria-selected="false">Term Project</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="intro" data-panel="exercise-4">
+    <p>Follow the <b>Guide for observing and interpreting spatial relationships</b> in Canvas. Where the guide says Felt, use this page: the steps are the same. Start in step 1 with Chelsea and the neighboring town you chose in Exercise 3.</p>
+  </section>
+  <section class="intro" data-panel="midterm" hidden>
+    <p>Follow the <b>Midterm Guide</b> in Canvas. Where the guide says Felt, use this page: the steps are the same. Start in step 1 with Lawrence and Methuen.</p>
+  </section>
+
+  <section data-panel="exercise-4 midterm">
+    <p class="savenote" role="note"><strong>This page saves nothing between visits.</strong> Before you close it, use <strong>Copy link</strong> in step 5 and paste the link somewhere safe (your Data Log). The link reopens your map exactly as you left it.</p>
+    <p id="load-status" class="load" role="status">Loading the map data for all of Massachusetts…</p>
+    <div id="explorer"></div>
+    <p class="savenote" role="note"><strong>This page saves nothing between visits.</strong> Use <strong>Copy link</strong> in step 5 to keep your map: the link reopens it exactly as you left it.</p>
+  </section>
+
+  <section data-panel="term-project" hidden>
+    <div id="tp-cards">
+      <p class="tp-lead">Find your team's question and click your team. Bookmark your team's page: it has its own address, and it opens with your question's layers already in place.</p>
+      <div class="qgrid" id="tp-grid"></div>
+    </div>
+    <div id="tp-team" class="tp-team" hidden>
+      <div class="crumb"><a href="#term-project">Term Project</a> › <span data-t="q"></span> › <b data-t="team"></b> · <a href="#term-project">Switch team</a></div>
+      <h2 class="teamh" data-t="head"></h2>
+      <!-- Her pick 2026-11-19: La Colaborativa's question beside the team's own research question (Option 2), her wording. -->
+      <div class="rq2">
+        <div class="rq-a"><p class="rq-k">1 · What La Colaborativa asked, in their words</p><p class="rq-q" data-t="text"></p></div>
+        <div class="rq-b"><p class="rq-k"><label for="tp-rq">2 · Your team's research question</label></p>
+          <p>Write the research question you designed on your Studio Mapping Worksheet and Team Status Check In here. This question will be a part of your saved map image.</p>
+          <textarea id="tp-rq" rows="3" placeholder="Type your team's research question"></textarea>
+          <p class="rq-note">Every map and every finding should help answer La Colaborativa's original question. Before you add a data layer, ask whether this map answers their original question?</p></div>
+      </div>
+      <!-- Her pick 2026-11-19 ("Build all five"): how the pieces connect. -->
+      <div class="flow" aria-label="How your project fits together"><div class="fs"><span class="fn">1</span><span class="fi" aria-hidden="true">💬</span><b>La Colaborativa asked</b><span>their question, in their words</span></div><span class="fa" aria-hidden="true">→</span>
+        <div class="fs"><span class="fn">2</span><span class="fi" aria-hidden="true">✎</span><b>Your research question</b><span>one question a map can answer</span></div><span class="fa" aria-hidden="true">→</span>
+        <div class="fs"><span class="fn">3</span><span class="fi" aria-hidden="true" data-t="flow3"></span><b>Your maps and findings</b><span>each one helps answer 1</span></div></div>
+      <div class="lyrs"><table><thead><tr><th scope="col" data-t="lyrhead"></th><th scope="col">Where it comes from</th></tr></thead><tbody data-t="rows"></tbody></table><p class="gkey" data-t="lyrkey"></p></div>
+      <details class="about ttab"><summary><span class="tbtn"><span class="tbtn-open">▸ About these data</span><span class="tbtn-close">▾ Hide: About these data</span></span><span class="tsum">What each layer measures, who publishes it, the years, how the number is made, and what to keep in mind</span></summary><div class="dcards" data-t="docs"></div></details>
+      <p class="tp-more muted" data-t="more" hidden>After your team meets with your instructor, your team's datasets are added to this page.</p>
+      <p id="tp-status" class="load" role="status" hidden></p>
+      <p class="mapnote" role="note">Remember La Colaborativa's question: does this map help answer it?</p>
+      <!-- Question D only (her picks 2026-11-19: Option A + C with pictures; "Build all five"). -->
+      <div class="scale-tabs" role="tablist" aria-label="Map scale" data-t="scales" hidden>
+        <button type="button" role="tab" aria-selected="true" data-scale="tracts"><span class="st-pic" data-pic="tracts"></span><span class="st-x"><span class="st-t">Census tracts</span><span class="st-s">Neighborhoods inside a city · 11 layers</span></span></button>
+        <button type="button" role="tab" aria-selected="false" data-scale="towns"><span class="st-pic" data-pic="towns"></span><span class="st-x"><span class="st-t">Cities and towns</span><span class="st-s">Whole cities and towns · teen birth rate</span></span></button>
+      </div>
+      <p class="scaleline" data-scaleline="tracts" hidden>▦ <b>You are looking at census tracts,</b> a proxy for neighborhoods within a city. Compare tracts with tracts.</p>
+      <p class="scaleline" data-scaleline="towns" hidden>⌂ <b>You are looking at whole cities and towns.</b> The teen birth rate is published only at this level to protect people’s privacy: where there are only a few births, the numbers could point to real people. Think of the idea behind privacy rules like HIPAA, even though these are public counts, not anyone’s records. <b>Only compare the teen birth rate with other city or town data.</b></p>
+      <details class="why2" data-t="why2" hidden><summary>ⓘ Why are there two tabs?</summary><div>
+        <div class="pics"><figure><span data-pic="tracts-big"></span><figcaption><b>Census tracts</b><br>Chelsea split into 9 tracts, each a proxy for a neighborhood (usually 1,200 to 8,000 people)</figcaption></figure>
+          <figure><span data-pic="towns-big"></span><figcaption><b>Cities and towns</b><br>Chelsea as one whole city, beside its neighbors</figcaption></figure></div>
+        <p><strong>Census tracts</strong> stand in (as a proxy) for neighborhoods within a city. The “Census tracts” tab maps them, so you can compare neighborhoods inside Chelsea with neighborhoods in other places.</p>
+        <p><strong>Cities and towns</strong>: to protect people’s privacy, the teen birth rate is published only for whole cities and towns, so it is in the “Cities and towns” tab, with the housing and CDC numbers for each whole city or town.</p>
+        <p class="rule"><span class="ok">✓</span> Tracts with tracts &nbsp; <span class="ok">✓</span> Cities with cities &nbsp; <span class="no">✗</span> Never a tract with a city</p></div></details>
+      <div id="team-explorer"></div>
+      <div id="team-towns" class="towns" hidden></div>
+      <p class="savenote" role="note"><strong>This page saves nothing between visits.</strong> Before you close it, use <strong>Copy link</strong> in step 5 and paste the link into your team's Data Log. The link reopens your map exactly as you left it.</p>
+    </div>
+  </section>
+</main>
+
+<script src="vendor/leaflet/leaflet.js"></script>
+<script src="vendor/turf/turf.min.js"></script>
+<script src="vendor/simple-statistics/simple-statistics.min.js"></script>
+<script src="js/measures.js?v=20261124a"></script>
+<script src="js/core.js?v=20261124a"></script>
+<script src="js/teams.js?v=20261124a"></script>
+<script src="js/datadocs.js?v=20261124a"></script>
+<script src="js/explorer.js?v=20261124a"></script>
+<script src="js/towns.js?v=20261124a"></script>
+<script src="js/app.js?v=20261124a"></script>
+</body>
+</html>
