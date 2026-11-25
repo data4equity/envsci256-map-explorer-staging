@@ -33,6 +33,7 @@
   // Her pick 2026-11-25 (A2): a light tint inside each team buffer, so the gaps in it show as untinted ground.
   const BUF_TINT = 0.16;
   const tint = hex => `rgba(${[1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16)).join(",")},${BUF_TINT})`;
+  const BUF_BOX_LABELS = { parks: "Parks", routes: "Roads", chcs: "Health centers", stores: "Stores" };
   const selectAllBox = (key, text, offCount, total) => `<label class="selall"><input type="checkbox" data-k="${key}" ${C.selectAllState(offCount, total).checked ? "checked" : ""}><span>${text}</span></label>`;
   const el = (tag, attrs = {}, html = "") => { const e = document.createElement(tag); for (const k in attrs) e.setAttribute(k, attrs[k]); e.innerHTML = html; return e; };
 
@@ -364,7 +365,7 @@
       w.innerHTML = C.TEAM_BUF_ORDER.filter(key => this.opts.layers.includes(key)).map(key => {
         const color = colors.find(item => item.key === key), disabled = !this.groupShown(key) || (!color && s.buf.length >= 2);
         return `<label class="check"><input type="checkbox" data-buf="${key}" ${color ? "checked" : ""} ${disabled ? "disabled" : ""}> <span>${color ? `<i class="sw ln" style="border-color:${color.color}"></i>` : ""}${labels[key]}</span></label>`;
-      }).join("") + (!this.opts.layers.some(key => this.groupShown(key)) ? '<div class="muted small">Tick a layer in step 3 first.</div>' : "") + (s.buf.length === 2 ? '<div class="muted small">Two buffers at a time. Untick one to buffer another layer.</div>' : "") + (s.buf.length && !s.miles ? '<div class="muted small">Type a distance in step 5.</div>' : "");
+      }).join("") + (!this.opts.layers.some(key => this.groupShown(key)) ? '<div class="muted small">Tick a layer in step 3 first.</div>' : "") + (s.buf.length === 2 ? '<div class="muted small">Two buffers at a time. Untick one to buffer another layer.</div>' : "") + (s.buf.some(key => !(C.bufferMilesFor(s, key) > 0)) ? '<div class="muted small">Type a distance in step 5.</div>' : "");
       w.querySelectorAll("[data-buf]").forEach(c => c.onchange = () => this.set("buf", C.toggleBuffer(s.buf, c.dataset.buf)));
       return w;
     }
@@ -387,13 +388,23 @@
 
     gTeamBuffer(w) {
       const s = this.s;
-      w.innerHTML = `<label>Buffer distance, miles<input type="number" min="0.01" max="5" step="0.01" data-k="mi" value="${s.miles > 0 ? s.miles : ""}" placeholder="Type a distance, e.g. 0.25"></label><button type="button" class="btn ghost" data-k="bufoff" ${s.miles === 0 ? "disabled" : ""}>Turn off the buffer</button>` +
+      // Her pick 2026-11-25 (D1): one box per buffer, beside its color. With no buffer chosen yet, one shared box.
+      const colors = C.bufferPairColors(s.buf, s.ramp), any = colors.some(({ key }) => C.bufferMilesFor(s, key) > 0) || s.miles > 0;
+      const boxes = colors.length ? colors.map(({ key, color }) => { const v = C.bufferMilesFor(s, key);
+        return `<label class="mibox"><span><i class="sw ln" style="border-color:${color};background:${tint(color)}"></i>${BUF_BOX_LABELS[key]} buffer, miles</span><input type="number" min="0.01" max="5" step="0.01" data-mi="${key}" value="${v > 0 ? v : ""}" placeholder="Type a distance, e.g. 0.25"></label>`; }).join("")
+        : `<label>Buffer distance, miles<input type="number" min="0.01" max="5" step="0.01" data-mi="" value="${s.miles > 0 ? s.miles : ""}" placeholder="Type a distance, e.g. 0.25"></label>`;
+      w.innerHTML = `${boxes}<button type="button" class="btn ghost" data-k="bufoff" ${any ? "" : "disabled"}>${colors.length === 2 ? "Turn off the buffers" : "Turn off the buffer"}</button>` +
         (s.buf.some(key => key === "parks" || key === "routes") ? `<div class="bnote"><b>How the buffer is measured</b><br>The buffer is drawn from the <b>edge</b> of each park or road (its outer boundary), not from its center. Every point on the outline is the same distance from the nearest edge. People reach a park at its edge, at a gate or the sidewalk along its side, not at its middle. A road's traffic pollution also spreads out from the road itself. So a large park gets a large outline and a small park gets a small one. If the buffer were drawn from the center instead, a big park would look farther away than it is, and part of the park could sit outside its own buffer.</div>` : "") +
         (s.buf.includes("chcs") ? `<div class="bnote"><b>How the buffer is measured</b><div class="bwrap"><svg viewBox="0 0 120 80" width="120" height="80" aria-hidden="true"><rect width="120" height="80" fill="#eef0ef"/><circle cx="60" cy="40" r="30" fill="none" stroke="#ea580c" stroke-width="2"/><line x1="60" y1="40" x2="90" y2="40" stroke="#1d2522" stroke-dasharray="3 2"/><text x="64" y="35" font-size="10">distance</text><rect x="56" y="36" width="8" height="8" fill="#c2185b" stroke="#fff"/></svg><span>Each health center is a point, so its buffer is a circle around that point. The distance you type is the circle's radius.</span></div></div>` : "") +
         (s.buf.includes("stores") ? `<div class="bnote"><b>How the buffer is measured</b><br>Each store is a point, so its buffer is a circle around that point. The distance you type is the circle's radius.</div>` : "") +
-        (s.buf.length === 2 ? `<div class="muted small">Both buffers use this distance.</div>` : "");
-      w.querySelector("[data-k=mi]").onchange = e => this.set("miles", +e.target.value > 0 ? Math.min(5, Math.max(0.01, +e.target.value)) : 0);
-      w.querySelector("[data-k=bufoff]").onclick = () => this.set("miles", 0);
+        (s.buf.length === 2 ? `<div class="muted small">Each buffer has its own distance.</div>` : "");
+      const clean = v => +v > 0 ? Math.min(5, Math.max(0.01, +v)) : 0;
+      w.querySelectorAll("[data-mi]").forEach(input => input.onchange = e => {
+        const key = input.dataset.mi, v = clean(e.target.value);
+        if (!key) return this.set("miles", v);
+        this.setMany({ bufMiles: { ...(s.bufMiles || {}), [key]: v } });
+      });
+      w.querySelector("[data-k=bufoff]").onclick = () => this.setMany({ miles: 0, bufMiles: {} });
       return w;
     }
 
@@ -515,10 +526,14 @@
         if (shown("stores")) {
           this.places = C.storePlacesFor(this.storeDoc.features, s.show.filter(k => C.STORE_TYPES.includes(k)), this.sel);
         }
-        if (s.miles > 0) {
+        {
           const features = { parks: this.parks, routes: this.routes, chcs: this.centers, stores: this.places };
           const labels = { parks: "parks", routes: "roads", chcs: "health centers", stores: "stores" };
-          this.pair = C.bufferPairColors(s.buf, s.ramp).map(({ key, color }) => ({ key, color, union: C.mergedBuffer(features[key], s.miles), label: labels[key] }));
+          // Each buffer at its own distance (her pick 2026-11-25, D1); a buffer with no distance yet is left out.
+          this.pair = C.bufferPairColors(s.buf, s.ramp).map(({ key, color }) => {
+            const miles = C.bufferMilesFor(s, key);
+            return { key, color, miles, union: C.mergedBuffer(features[key], miles), label: labels[key] };
+          }).filter(b => b.miles > 0);
           this.overlap = this.pair.length === 2 ? C.overlapOf(this.pair[0].union, this.pair[1].union) : null;
           this.pair.forEach(p => { this.touchBy[p.key] = C.touchedTracts(this.sel, p.union ? [p.union] : []); });
           this.touchBoth = C.touchedTracts(this.sel, this.overlap ? [this.overlap] : []);
@@ -606,7 +621,7 @@
       const fp = s.focus != null && (this.team ? s.show.includes("parks") : s.condType === "parks") ? this.parkList.find(f => f.properties.id === s.focus) : null;
       if (fp) {
         this.focusGroup = C.touchingGroup(fp, this.parkList, FOCUS_COLS.length);
-        this.focusRings = C.bufferEach(this.focusGroup, s.miles);
+        this.focusRings = C.bufferEach(this.focusGroup, this.team ? C.bufferMilesFor(s, "parks") || s.miles : s.miles);
         this.lyr.buf.eachLayer(l => l.setStyle && l.setStyle({ opacity: 0.2 }));
         this.focusGroup.forEach((f, i) => {
           L.geoJSON(f, { pane: "overlay", renderer: this.overlayRenderer, style: { color: FOCUS_COLS[i], weight: 3, fillColor: FOCUS_COLS[i], fillOpacity: 0.35 }, interactive: false }).addTo(this.lyr.focus);
@@ -638,7 +653,7 @@
         const nearest = this.s.show.includes("parks") ? C.nearestEdge(f, this.parks) : null;
         const lists = p.types.map(type => `<li><i class="sw dot" style="background:${STORE_COLORS[type]}"></i>${esc((this.opts.stores.find(o => o.key === type) || {}).label)}${p.names[type] !== name ? ` (listed as ${esc(p.names[type])})` : ""}</li>`).join("");
         const park = nearest ? `<div class="small">Nearest open space on the map: <b>${esc(nearest.feature.properties.SITE_NAME || "Unnamed open space")}</b>, ${nearest.miles.toFixed(2)} mi to its edge</div>` : "";
-        const buffers = this.pair.filter(b => b.key !== "stores").map(b => `<div class="small">${b.union && turf.booleanPointInPolygon(f, b.union) ? "Inside" : "Outside"} the ${this.s.miles}-mile ${esc(b.label)} buffer</div>`).join("");
+        const buffers = this.pair.filter(b => b.key !== "stores").map(b => `<div class="small">${b.union && turf.booleanPointInPolygon(f, b.union) ? "Inside" : "Outside"} the ${b.miles}-mile ${esc(b.label)} buffer</div>`).join("");
         L.marker([y, x], { pane: "overlay", keyboard: false, title: name, icon: L.divIcon({ className: "xstore", iconSize: [16, 16], html }) })
           .bindPopup(`<div class="pp"><div class="pph">${esc(name)}</div><div class="muted small">${esc(p.addr)}, ${esc(p.town)}</div><div class="small"><b>On these lists:</b></div><ul class="lic">${lists}</ul>${park}${buffers}</div>`, { maxWidth: 290 }).addTo(this.lyr.cond);
       });
@@ -717,7 +732,7 @@
         if (s.show.includes("chcs")) rows.push('<div><i class="sw hc"></i>Community health centers</div>');
         (this.opts.stores || []).filter(store => s.show.includes(store.key)).forEach(store => rows.push(`<div><i class="sw dot" style="background:${STORE_COLORS[store.key]}"></i>${esc(store.label)}</div>`));
         if ((this.opts.stores || []).filter(store => s.show.includes(store.key)).length >= 2) rows.push('<div><svg class="sw split" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 0 A6 6 0 0 0 6 12 Z" fill="#c62828"/><path d="M6 0 A6 6 0 0 1 6 12 Z" fill="#f9a825"/></svg>A store on two or more of these lists</div>');
-        this.pair.forEach(b => rows.push(`<div><i class="sw ln" style="border-color:${b.color};background:${tint(b.color)}"></i>${s.miles}-mile buffer, ${esc(b.label)}</div>`));
+        this.pair.forEach(b => rows.push(`<div><i class="sw ln" style="border-color:${b.color};background:${tint(b.color)}"></i>${b.miles}-mile buffer, ${esc(b.label)}</div>`));
         if (this.pair.length === 2) rows.push('<div><i class="sw both"></i>Inside both buffers</div>');
         this.legendEl.innerHTML = `<div class="lt">${esc(s.legend)}</div>` + br.slice(1).map((v, i) => `<div><i class="sw" style="background:${this.pal[i]}"></i>${fmtFor(s.measure)(br[i])} – ${fmtFor(s.measure)(v)}</div>`).join("") + rows.join("") + `<div class="lsrc">${C.METHODS[s.method]}, ${Math.max(0, br.length - 1)} classes</div>`;
         return;
@@ -743,8 +758,8 @@
           const estimate = count => C.estimateInside(tracts.map(f => ({ share: this.shares[f.properties.TractFIPS]?.[buffer.key] ?? 0, count: count(f.properties) })));
           const residents = estimate(p => p.pop_total);
           const measured = estimate(p => T.countFor(s.measure, p, this.countsDoc?.values[p.TractFIPS] || {}));
-          return { key: buffer.key, color: buffer.color, label: buffer.key === "both" ? "Inside both buffers" : `${s.miles}-mile ${buffer.label} buffer`,
-            tiles: T.peopleTiles(town, buffer, s.miles, residents, measured, T.PEOPLE[s.measure], two) };
+          return { key: buffer.key, color: buffer.color, label: buffer.key === "both" ? "Inside both buffers" : `${buffer.miles}-mile ${buffer.label} buffer`,
+            tiles: T.peopleTiles(town, buffer, buffer.miles, residents, measured, T.PEOPLE[s.measure], two) };
         });
         return { town, green: item, rows };
       });
@@ -753,7 +768,8 @@
     /** The card above the map (her picks 2026-11-25, C1 and N1): number tiles under a heading, one row per buffer
         when there are two, and the estimate note behind its i button. */
     renderBand() {
-      const b = this.bandEl, facts = { buffers: this.pair, towns: this.team ? this.cityFacts() : [] };
+      // Her ask 2026-11-25: nothing shows here until a neighborhood condition is ticked in step 3.
+      const b = this.bandEl, facts = { buffers: this.pair, towns: this.team && this.s.show.length ? this.cityFacts() : [] };
       const shown = facts.towns.filter(f => f.green || f.rows === "counting" || f.rows.length);
       b.hidden = !shown.length;
       if (!shown.length) { b.innerHTML = ""; return; }
@@ -804,10 +820,10 @@
     teamStoreTable() {
       const s = this.s;
       if (!s.towns.length || !C.STORE_TYPES.some(type => s.show.includes(type))) return "";
-      const parks = s.show.includes("parks"), buffered = parks && s.miles > 0 && this.pair.some(b => b.key === "parks");
+      const parks = s.show.includes("parks"), parkBuf = this.pair.find(b => b.key === "parks"), buffered = parks && !!parkBuf;
       const name = p => p.names[p.types[0]];
-      const rows = parks ? C.storeRows(this.places, this.parks || [], buffered ? s.miles : -1) : [...this.places].sort((a, b) => name(a.properties).localeCompare(name(b.properties))).map(store => ({ store }));
-      const count = !rows.length ? "No stores on the lists you ticked in your chosen towns." : buffered ? `<b>${rows.filter(r => r.inside).length} of ${rows.length}</b> stores shown on the map are inside the ${s.miles}-mile parks buffer.` : `<b>${rows.length}</b> stores shown on the map in your chosen towns.`;
+      const rows = parks ? C.storeRows(this.places, this.parks || [], buffered ? parkBuf.miles : -1) : [...this.places].sort((a, b) => name(a.properties).localeCompare(name(b.properties))).map(store => ({ store }));
+      const count = !rows.length ? "No stores on the lists you ticked in your chosen towns." : buffered ? `<b>${rows.filter(r => r.inside).length} of ${rows.length}</b> stores shown on the map are inside the ${parkBuf.miles}-mile parks buffer.` : `<b>${rows.length}</b> stores shown on the map in your chosen towns.`;
       return `<div class="scount">${count}</div><details class="ttab stab" ${this.storeTableOpen ? "open" : ""}><summary><span class="tbtn"><span class="tbtn-open">▸ Open the store table</span><span class="tbtn-close">▾ Hide the store table</span></span><span class="tsum">${parks ? "Each store, every list it is on, and the nearest open space on the map" : "Each store and every list it is on"}</span></summary>
         <div class="tscroll"><table><thead><tr><th scope="col">Store</th><th scope="col">Address</th><th scope="col">On these lists</th>${parks ? `<th scope="col">Nearest open space on the map</th><th scope="col">Miles to its edge</th>${buffered ? '<th scope="col">Inside the parks buffer?</th>' : ""}` : ""}</tr></thead><tbody>` +
         rows.map(r => { const p = r.store.properties; return `<tr><td>${esc(name(p))}</td><td>${esc(p.addr)}${s.towns.length > 1 ? `, ${esc(p.town)}` : ""}</td><td>${esc(C.listNames(p.types))}</td>${parks ? `<td>${esc(r.park || "–")}</td><td>${r.miles == null ? "–" : r.miles.toFixed(2)}</td>${buffered ? `<td>${r.inside ? "Yes" : "No"}</td>` : ""}` : ""}</tr>`; }).join("") + `</tbody></table></div></details>`;
@@ -817,7 +833,7 @@
       const e = this.focusEl, g = this.focusGroup;
       e.hidden = !g.length; if (!g.length) return;
       e.innerHTML = `<div class="fch"><b>Zoomed in on ${esc(g[0].properties.SITE_NAME || "this park")}</b><button class="btn ghost" type="button" data-back>Back to all parks</button></div>` +
-        g.map((f, i) => `<div class="fcr"><i style="background:${FOCUS_COLS[i]}55;border-color:${FOCUS_COLS[i]}"></i><div><b style="color:${FOCUS_COLS[i]}">${esc(f.properties.SITE_NAME || "Unnamed open space")}</b><br><span class="muted">${fmt(f.properties.GIS_ACRES)} acres · ${esc(f.properties.Town)} · its own ${this.s.miles}-mile ring</span></div></div>`).join("") +
+        g.map((f, i) => `<div class="fcr"><i style="background:${FOCUS_COLS[i]}55;border-color:${FOCUS_COLS[i]}"></i><div><b style="color:${FOCUS_COLS[i]}">${esc(f.properties.SITE_NAME || "Unnamed open space")}</b><br><span class="muted">${fmt(f.properties.GIS_ACRES)} acres · ${esc(f.properties.Town)} · its own ${this.team ? C.bufferMilesFor(this.s, "parks") || this.s.miles : this.s.miles}-mile ring</span></div></div>`).join("") +
         `<div class="muted small">${g.length > 1 ? `${g.length} separate records that touch, so they look like one green area. Each one has its own ring.` : "No other park touches this one."}</div>`;
       e.querySelector("[data-back]").onclick = () => this.set("focus", null, true);
     }
@@ -842,7 +858,7 @@
         const stores = (this.opts.stores || []).filter(store => s.show.includes(store.key));
         stores.forEach(store => teamRows.push({ kind: "store", color: STORE_COLORS[store.key], text: store.label }));
         if (stores.length >= 2) teamRows.push({ kind: "split", colors: stores.map(store => STORE_COLORS[store.key]), text: "A store on two or more of these lists" });
-        this.pair.forEach(b => teamRows.push({ kind: "buffer", color: b.color, text: `${s.miles}-mile buffer, ${b.label}` }));
+        this.pair.forEach(b => teamRows.push({ kind: "buffer", color: b.color, text: `${b.miles}-mile buffer, ${b.label}` }));
         if (this.pair.length === 2) teamRows.push({ kind: "both", text: "Inside both buffers" });
         teamRows.forEach(row => { legendHeight += wrappedHeight(row.text, 250, "", 15, 19) + 27; });
       }

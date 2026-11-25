@@ -15,7 +15,7 @@
   const STEP_KEYS = {
     filter: ["towns"], style: ["measure", "method", "classes", "ramp", "legend"],
     condition: ["condType", "routeMode", "routeNames", "adminType", "rtNumber", "access", "minAcres", "onlyTowns", "off", "chcsOff", "stores", "condName", "focus"],
-    buffer: ["miles", "bufName", "bufColor"],
+    buffer: ["miles", "bufMiles", "bufName", "bufColor"],
     show: ["show", "clip", "access", "minAcres", "off", "chcsOff", "routeMode", "routeNames", "adminType", "rtNumber", "focus"],
     bufferthese: ["buf"]
   };
@@ -81,6 +81,12 @@
   function filterRoutes(routes, rule) {
     if (rule.mode === "num") return routes.filter(f => f.properties.ADMIN_TYPE === Number(rule.adminType) && String(f.properties.RT_NUMBER) === String(rule.rtNumber).trim());
     return routes.filter(f => rule.names.includes(f.properties.Route_Name));
+  }
+
+  /** A team buffer's distance (her pick 2026-11-25, D1): its own, or the shared one an older link carries. */
+  function bufferMilesFor(state, key) {
+    const own = state.bufMiles && state.bufMiles[key];
+    return own != null ? own : state.miles;
   }
 
   /** Her pick 2026-11-25 (option B): { road name: [towns it crosses] } for the major roads that cross the census
@@ -393,7 +399,7 @@
     return "Sources: " + [...new Set(normalized)].join("; ") + ".";
   }
 
-  const api = { sourceLine, selectAllState, routeTowns, townsPhrase, teamGroupShown, normalizeTeamLayers, TEAM_BUF_ORDER, BUF_PAIR_COLORS, STORE_TYPES, bufferPairColors, toggleBuffer, migrateTeamState, clipToTowns, mergedBuffer, polygonPieces, overlapOf, landShare, sharePercent, shareCell, tractShares, greenShare, cityGreen, estimateInside, slicePaths, listNames, storePlacesFor, placeTypes, fitProjection, pathFor, STEP_KEYS, resetStep, NO_CONDITION, RAMPS, METHODS, rampColors, breaks, classOf, paddedBbox, townsInBbox, filterRoutes, clipToBbox,
+  const api = { sourceLine, selectAllState, bufferMilesFor, routeTowns, townsPhrase, teamGroupShown, normalizeTeamLayers, TEAM_BUF_ORDER, BUF_PAIR_COLORS, STORE_TYPES, bufferPairColors, toggleBuffer, migrateTeamState, clipToTowns, mergedBuffer, polygonPieces, overlapOf, landShare, sharePercent, shareCell, tractShares, greenShare, cityGreen, estimateInside, slicePaths, listNames, storePlacesFor, placeTypes, fitProjection, pathFor, STEP_KEYS, resetStep, NO_CONDITION, RAMPS, METHODS, rampColors, breaks, classOf, paddedBbox, townsInBbox, filterRoutes, clipToBbox,
     pointsInBbox, pointsInTracts, nearestEdge, storeRows, filterOpenSpace, bufferEach, touchedTracts, countByTown, touchingGroup, acsRange, encodeState, decodeState };
   if (typeof module === "object" && module.exports) module.exports = api;
   else root.ExplorerCore = api;

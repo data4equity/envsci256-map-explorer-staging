@@ -210,6 +210,8 @@ select[multiple] { padding: 2px; }
 .ttab[open] .tbtn-open { display: none; }
 .ttab[open] .tbtn-close { display: inline; }
 .tsum { flex: 1; min-width: 0; font-size: .86rem; }
+/* Her ask 2026-11-25: the table summary uses the blue note box, like "Area, not people" under the table. */
+.xtable .ttab > summary .tsum { background:#e8f2fb; border:1px solid #9cc3e6; color:#0b3d66; border-radius:6px; padding:8px 10px; }
 .ttab[open] > summary { color: var(--fg); }
 
 /* "About these data" fold-out on team pages (Option A, 2026-11-18) */
