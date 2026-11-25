@@ -105,9 +105,10 @@
       this.layer.setStyle(f => {
         const p = f.properties, c = C().classOf(p[k], br), home = p.NAME === HOME;
         const fill = c >= 0 ? pal[c] : k === "teen_rate" && p.teen_status === "hidden" ? "url(#thatch)" : "#c9cecc";
-        if (p.NAME === this.pick) return { fillColor: fill, fillOpacity: c >= 0 ? 0.88 : 1, color: "#111", weight: 4 };
+        // A city in the table keeps its own color, thicker when highlighted (her ruling 2026-11-25: map and column match).
         const ci = this.cols.indexOf(p.NAME);
-        if (ci >= 0) return { fillColor: fill, fillOpacity: c >= 0 ? 0.88 : 1, color: cityColor(ci), weight: 3.5 };
+        if (ci >= 0) return { fillColor: fill, fillOpacity: c >= 0 ? 0.88 : 1, color: cityColor(ci), weight: p.NAME === this.pick ? 6 : 3.5 };
+        if (p.NAME === this.pick) return { fillColor: fill, fillOpacity: c >= 0 ? 0.88 : 1, color: "#111", weight: 4 };
         return { fillColor: fill, fillOpacity: c >= 0 ? 0.88 : 1, color: home ? "#1d2522" : "#fff", weight: home ? 2.6 : 0.5 };
       });
       this.layer.eachLayer(l => { if (l.feature.properties.NAME === HOME || this.cols.includes(l.feature.properties.NAME)) l.bringToFront(); });
