@@ -8,7 +8,7 @@
     pct_hh_children: { label: "Households with children under 18", src: "Census estimate (ACS 2019–2023)", unit: "%", decimals: 1, moe: "pct_hh_children_moe90" }
   };
   const COLUMN_NOTES = {
-    green: "<b>Public green space</b> The share of the census tract's land that is public open space. It counts land only, not water. It leaves out open space whose public access is limited, closed or unknown, such as some cemeteries and parkways. It follows the minimum acres and the parks you switch off in Neighborhood conditions.",
+    green: "<b>Public green space</b> The share of the census tract's land that is public open space. It counts land only, not water. It leaves out open space whose public access is limited, closed or unknown, such as some cemeteries and parkways. It follows the minimum acres and the parks you switch off in step 3.",
     value: "<b>Value</b> The census tract's value for the layer chosen in step 2, in the unit shown in the column heading.",
     ci: "<b>95% Confidence Intervals</b> A range around the value. If the survey were repeated many times, about 95 of every 100 ranges built this way would hold the true value. A wide range means a less certain estimate.",
     moe: "<b>Margin of error (±)</b> How far the estimate could sit from the true value, at 95% confidence. The range in the column to its left equals the value plus or minus this number.",
@@ -166,7 +166,7 @@
       start.onclick = () => { this.pick = null; const next = C.resetStep(this.s, this.opening, "all"); if (!next.legend) next.legend = measureLabel(next.measure || DEFAULT_STATE.measure); this.setMany(next, true); };
       this.panel.append(start);
       const steps = [["Filter", "Filter tracts by town (one or more)", this.gFilter()], ["Style", "Color the tracts", this.gStyle()],
-        ["Condition", "Add the neighborhood condition", this.gCond()], ["Buffer", "Buffer around the neighborhood condition", this.gBuffer()], ["Save", "Title, save and link", this.gSave()]];
+        ["Condition", "Neighborhood conditions", this.gCond()], ["Buffer", "Buffer neighborhood conditions", this.gBuffer()], ["Save", "Map title, save map image and copy map link", this.gSave()]];
       steps.forEach(([key, title, body], i) => {
         const step = key.toLowerCase();
         const d = el("details", this.open.has(key) ? { open: "" } : {}, `<summary><span class="num">${i + 1}</span> ${title}${i < 4 ? `<button type="button" class="rlink" data-reset="${step}">Reset</button>` : ""}</summary>`);
@@ -177,7 +177,11 @@
           if (!this.s.legend) this.s.legend = measureLabel(this.s.measure);
           this.setMany(step === "filter" ? { towns: next.towns } : {});
         };
-        d.addEventListener("toggle", () => { d.open ? this.open.add(key) : this.open.delete(key); });
+        d.addEventListener("toggle", () => {
+          // Her ask 2026-11-25: opening a step closes the others, so one step shows at a time.
+          if (d.open) this.panel.querySelectorAll("details[open]").forEach(other => { if (other !== d) other.open = false; });
+          d.open ? this.open.add(key) : this.open.delete(key);
+        });
         d.append(body); this.panel.append(d);
       });
       this.panel.scrollTop = keepScroll;
@@ -190,8 +194,8 @@
       start.onclick = () => { this.pick = null; this.s = Object.assign({}, DEFAULT_STATE, C.resetStep(this.s, this.opening, "all")); this.s = C.migrateTeamState(this.s); this.pruneBuf(); if (!this.s.legend) this.s.legend = measureLabel(this.s.measure); this.update(true); };
       this.panel.append(start);
       const steps = [["Filter", "Filter tracts by town (one or more)", this.gFilter(), 1, "filter"], ["Style", "Color the tracts", this.gStyle(), 2, "style"],
-        ["Show", "Neighborhood conditions", this.gShow(), null, "show"], ["Bufferthese", "Buffer neighborhood conditions", this.gBufferThese(), 3, "bufferthese"],
-        ["Buffer", "Buffer distance, miles", this.gBuffer(), 4, "buffer"], ["Save", "Map title, save map image and copy map link", this.gSave(), 5, null]];
+        ["Show", "Neighborhood conditions", this.gShow(), 3, "show"], ["Bufferthese", "Buffer neighborhood conditions", this.gBufferThese(), 4, "bufferthese"],
+        ["Buffer", "Buffer distance, miles", this.gBuffer(), 5, "buffer"], ["Save", "Map title, save map image and copy map link", this.gSave(), 6, null]];
       steps.forEach(([key, title, body, number, step]) => {
         const d = el("details", this.open.has(key) ? { open: "" } : {}, `<summary>${number ? `<span class="num">${number}</span> ` : ""}${title}${step ? `<button type="button" class="rlink" data-reset="${step}">Reset</button>` : ""}</summary>`);
         if (step) d.querySelector("[data-reset]").onclick = e => {
@@ -348,7 +352,7 @@
       w.innerHTML = C.TEAM_BUF_ORDER.filter(key => this.opts.layers.includes(key)).map(key => {
         const color = colors.find(item => item.key === key), disabled = !this.groupShown(key) || (!color && s.buf.length >= 2);
         return `<label class="check"><input type="checkbox" data-buf="${key}" ${color ? "checked" : ""} ${disabled ? "disabled" : ""}> <span>${color ? `<i class="sw ln" style="border-color:${color.color}"></i>` : ""}${labels[key]}</span></label>`;
-      }).join("") + (!this.opts.layers.some(key => this.groupShown(key)) ? '<div class="muted small">Tick a layer in Neighborhood conditions first.</div>' : "") + (s.buf.length === 2 ? '<div class="muted small">Two buffers at a time. Untick one to buffer another layer.</div>' : "") + (s.buf.length && !s.miles ? '<div class="muted small">Type a distance in step 4.</div>' : "");
+      }).join("") + (!this.opts.layers.some(key => this.groupShown(key)) ? '<div class="muted small">Tick a layer in step 3 first.</div>' : "") + (s.buf.length === 2 ? '<div class="muted small">Two buffers at a time. Untick one to buffer another layer.</div>' : "") + (s.buf.length && !s.miles ? '<div class="muted small">Type a distance in step 5.</div>' : "");
       w.querySelectorAll("[data-buf]").forEach(c => c.onchange = () => this.set("buf", C.toggleBuffer(s.buf, c.dataset.buf)));
       return w;
     }

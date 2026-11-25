@@ -100,7 +100,11 @@
     status.hidden = true;
     await visuals;
     if (teamShown !== team.id) return;
-    box.querySelector("[data-t=rows]").innerHTML = q.layers.map(l => [l, layerRow(l, doc)]).filter(([, r]) => r).map(([l, [a, b]]) => `<tr><td>${symbol(DD().kindOfLayer(l))}${esc(a)}</td><td>${esc(b)}</td></tr>`).join("");
+    const rows = q.layers.map(l => [l, layerRow(l, doc)]).filter(([, r]) => r);
+    box.querySelector("[data-t=rows]").innerHTML = rows.map(([l, [a, b]]) => `<tr><td>${symbol(DD().kindOfLayer(l))}${esc(a)}</td><td>${esc(b)}</td></tr>`).join("");
+    put("lyropen", `▸ Layers already added for Question ${q.id.toUpperCase()}`);
+    put("lyrclose", `▾ Hide: Layers already added for Question ${q.id.toUpperCase()}`);
+    put("lyrsum", `${rows.length} layers and the source of each`);
     await visuals;
     box.querySelector("[data-t=docs]").innerHTML = cardsHtml(window.DataDocs.cardsFor(q, window.PLACES_MEASURES));
     const kinds = [...new Set(q.layers.filter(l => layerRow(l, doc)).map(DD().kindOfLayer).filter(Boolean))];

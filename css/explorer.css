@@ -184,7 +184,7 @@ select[multiple] { padding: 2px; }
 .rq-b .rq-note { margin: 0; font-weight: 600; }
 .mapnote { margin: 0; padding: 8px 12px; background: #fff4d6; border: 1px solid #e0b84a; border-radius: 8px; font-weight: 600; }
 @media (max-width: 700px) { .rq2 { grid-template-columns: 1fr; } }
-.lyrs { background: var(--panel); border: 1px solid var(--line); border-radius: 9px; overflow: auto; }
+.lyrs { background: var(--panel); border-top: 1px solid var(--line); overflow: auto; }
 .lyrs table { width: 100%; border-collapse: collapse; font-size: .88rem; }
 .lyrs th, .lyrs td { padding: 7px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
 .lyrs tr:last-child td { border-bottom: 0; }

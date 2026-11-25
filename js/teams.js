@@ -5,7 +5,7 @@
 (function (root) {
   // Her ruling 2026-11-19: every team page opens on Chelsea's tracts colored by one measure, with no neighborhood
   // condition and no buffer ("Students will add these things"). miles: 0 = no buffer until a student types a
-  // distance in step 4 (her ruling 2026-11-20).
+  // distance in step 5 (her ruling 2026-11-20; renumbered 2026-11-25).
   const QUESTIONS = [
     {
       show: ["routes", "parks"],
@@ -32,7 +32,7 @@
       text: "New federal rules are changing who qualifies for MassHealth (Massachusetts' Medicaid program). Where in Chelsea could coverage loss concentrate, and what would that mean for primary care and safety-net clinics?",
       file: "term/question-b.json",
       // Her approval 2026-11-18: "Approve B page" (the final mockup). The page opens on Medicaid coverage with
-      // no health centers; students add them in step 3 and choose the buffer distance in step 4.
+      // no health centers; students add them in step 3 and choose the buffer distance in step 5.
       layers: [
         { key: "pct_medicaid_19_64", file: true },
         { key: "pct_noncitizen", file: true },
@@ -42,7 +42,7 @@
         { key: "pct_16_64_15to34h", file: true },
         { key: "ACCESS2", places: true },
         { key: "CHECKUP", places: true },
-        { key: "chcs", condition: true, label: "Community health centers (CHCS_PT) and their buffer", src: "MassGIS, February 2025 · add in step 3, choose the distance in step 4" }
+        { key: "chcs", condition: true, label: "Community health centers (CHCS_PT) and their buffer", src: "MassGIS, February 2025 · add in step 3, choose the distance in step 5" }
       ],
       start: { towns: ["Chelsea"], measure: "pct_medicaid_19_64", method: "quantile", classes: 5, ramp: "Purples", miles: 0 }
     },

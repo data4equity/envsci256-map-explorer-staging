@@ -9,7 +9,7 @@
 <title>ENVSCI 256 Map Explorer</title>
 <meta name="description" content="Course map explorer for ENVSCI 256 Health and Medical Geography: filter, color, buffer and save maps of Massachusetts census tracts.">
 <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
-<link rel="stylesheet" href="css/explorer.css?v=20261125d">
+<link rel="stylesheet" href="css/explorer.css?v=20261125e">
 </head>
 <body>
 <!-- staging:start -->
@@ -62,7 +62,8 @@
       <div class="flow" aria-label="How your project fits together"><div class="fs"><span class="fn">1</span><span class="fi" aria-hidden="true">💬</span><b>La Colaborativa asked</b><span>their question, in their words</span></div><span class="fa" aria-hidden="true">→</span>
         <div class="fs"><span class="fn">2</span><span class="fi" aria-hidden="true">✎</span><b>Your research question</b><span>one question a map can answer</span></div><span class="fa" aria-hidden="true">→</span>
         <div class="fs"><span class="fn">3</span><span class="fi" aria-hidden="true" data-t="flow3"></span><b>Your maps and findings</b><span>each one helps answer 1</span></div></div>
-      <div class="lyrs"><table><thead><tr><th scope="col" data-t="lyrhead"></th><th scope="col">Where it comes from</th></tr></thead><tbody data-t="rows"></tbody></table><p class="gkey" data-t="lyrkey"></p></div>
+      <!-- Her ask 2026-11-25: the layers table folds away, like "About these data". -->
+      <details class="about lyrfold ttab"><summary><span class="tbtn"><span class="tbtn-open" data-t="lyropen"></span><span class="tbtn-close" data-t="lyrclose"></span></span><span class="tsum" data-t="lyrsum"></span></summary><div class="lyrs"><table><thead><tr><th scope="col" data-t="lyrhead"></th><th scope="col">Where it comes from</th></tr></thead><tbody data-t="rows"></tbody></table><p class="gkey" data-t="lyrkey"></p></div></details>
       <details class="about ttab"><summary><span class="tbtn"><span class="tbtn-open">▸ About these data</span><span class="tbtn-close">▾ Hide: About these data</span></span><span class="tsum">What each layer measures, who publishes it, the years, how the number is made, and what to keep in mind</span></summary><div class="dcards" data-t="docs"></div></details>
       <p class="tp-more muted" data-t="more" hidden>After your team meets with your instructor, your team's datasets are added to this page.</p>
       <p id="tp-status" class="load" role="status" hidden></p>
@@ -82,7 +83,7 @@
         <p class="rule"><span class="ok">✓</span> Tracts with tracts &nbsp; <span class="ok">✓</span> Cities with cities &nbsp; <span class="no">✗</span> Never a tract with a city</p></div></details>
       <div id="team-explorer"></div>
       <div id="team-towns" class="towns" hidden></div>
-      <p class="savenote" role="note"><strong>This page saves nothing between visits.</strong> Before you close it, use <strong>Copy link</strong> in step 5 and paste the link into your team's Data Log. The link reopens your map exactly as you left it.</p>
+      <p class="savenote" role="note"><strong>This page saves nothing between visits.</strong> Before you close it, use <strong>Copy link</strong> in step 6 and paste the link into your team's Data Log. The link reopens your map exactly as you left it.</p>
     </div>
   </section>
 </main>
@@ -90,12 +91,12 @@
 <script src="vendor/leaflet/leaflet.js"></script>
 <script src="vendor/turf/turf.min.js"></script>
 <script src="vendor/simple-statistics/simple-statistics.min.js"></script>
-<script src="js/measures.js?v=20261125d"></script>
-<script src="js/core.js?v=20261125d"></script>
-<script src="js/teams.js?v=20261125d"></script>
-<script src="js/datadocs.js?v=20261125d"></script>
-<script src="js/explorer.js?v=20261125d"></script>
-<script src="js/towns.js?v=20261125d"></script>
-<script src="js/app.js?v=20261125d"></script>
+<script src="js/measures.js?v=20261125e"></script>
+<script src="js/core.js?v=20261125e"></script>
+<script src="js/teams.js?v=20261125e"></script>
+<script src="js/datadocs.js?v=20261125e"></script>
+<script src="js/explorer.js?v=20261125e"></script>
+<script src="js/towns.js?v=20261125e"></script>
+<script src="js/app.js?v=20261125e"></script>
 </body>
 </html>
