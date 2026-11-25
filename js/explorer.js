@@ -814,17 +814,13 @@
       if (!this.team && this.cond.length) legendHeight += wrappedHeight(this.condName(), 250, "", 15, 19) + 27;
       this.focusGroup.forEach(f => { legendHeight += wrappedHeight(`${f.properties.SITE_NAME || "Unnamed open space"} (${fmt(f.properties.GIS_ACRES)} ac)`, 250, "bold", 15, 19) + 27; });
       if (s.towns.length) legendHeight += 27;
-      const city = this.cityLines();
-      const cityText = [...city.green, ...city.people];
-      cityText.forEach(text => { legendHeight += wrappedHeight(text, 290, "", 13, 18) + 22; });
       const src = this.data.sources;
       const sourceValues = this.team ? [src.tracts && src.tracts.source,
-        (s.show.includes("parks") || this.opts.green) && src.openspace && src.openspace.source,
+        s.show.includes("parks") && src.openspace && src.openspace.source,
         s.show.includes("routes") && src.routes && src.routes.source,
         s.show.includes("chcs") && src.chcs && src.chcs.source,
         ...(this.storeDoc ? C.STORE_TYPES.filter(type => s.show.includes(type)).map(type => this.storeDoc.sources[type]) : []),
-        ...(city.people.length && this.shares && this.countsDoc ? [this.countsDoc.source] : []),
-        ...((s.clip || this.shares || this.green) && this.landDocs ? this.landDocs.map(doc => doc.source) : [])] :
+        ...(s.clip && this.landDocs ? this.landDocs.map(doc => doc.source) : [])] :
         ["tracts", this.cond.length ? (s.condType === "routes" ? "routes" : s.condType === "chcs" ? "chcs" : "openspace") : null].filter(Boolean).filter(kk => src[kk]).map(kk => src[kk].source);
       const srcText = C.sourceLine([TERM[s.measure] && TERM[s.measure].src, ...sourceValues]);
       const sourceHeight = wrappedHeight(srcText, 1050, "", 13, 18);
@@ -916,7 +912,6 @@
       this.focusGroup.forEach((f, i) => { g.fillStyle = FOCUS_COLS[i] + "59"; g.fillRect(x, y - 14, 26, 18); g.strokeStyle = FOCUS_COLS[i]; g.lineWidth = 3; g.strokeRect(x, y - 14, 26, 18); g.fillStyle = FOCUS_COLS[i]; g.font = font("bold", 15); y = wrap(g, `${f.properties.SITE_NAME || "Unnamed open space"} (${fmt(f.properties.GIS_ACRES)} ac)`, x + 36, y, 250, 19) + 27; g.font = font("", 15); });
       if (s.towns.length) { g.fillStyle = "#e3e6e5"; g.fillRect(x, y - 14, 26, 18); g.fillStyle = "#1d2522"; g.fillText("Other towns (not compared)", x + 36, y); y += 27; }
       g.fillStyle = "#1d2522"; g.font = font("", 13);
-      cityText.forEach(text => { y = wrap(g, text, x, y, 290, 18) + 22; });
       // solid north arrow + two-part scale bar, on the map below the tracts
       const pxPerMi = sc / 69.17, steps = [0.1, 0.25, 0.5, 1, 2, 5, 10, 20, 50];
       const mi = [...steps].reverse().find(d => d * pxPerMi <= 170) || 0.1, bar = mi * pxPerMi;
