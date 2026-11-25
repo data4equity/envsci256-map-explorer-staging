@@ -35,6 +35,10 @@
     const v = props && props.places && props.places[id];
     return v ? [v[0].toFixed(1), `(${v[1].toFixed(1)}, ${v[2].toFixed(1)})`] : ["Not published by CDC"];
   }
+  /** Her ask 2026-11-25: the Massachusetts column shows on its own before any city is added, and after that only
+      when the student ticks "Show the Massachusetts column". */
+  function stateShown(cols, showState) { return !cols.length || !!showState; }
+
   /** Quantile breaks, 5 classes, over the towns that have a value. */
   function townBreaks(features, key) { return C().breaks(features.map(f => f.properties[key]), "quantile", 5); }
 
@@ -44,7 +48,7 @@
   class TownArea {
     /** doc: data/towns/question-d-towns.json; cards: [{ title, rows }] for this tab's "About these data". */
     constructor(el, doc, cards, cardsHtml) {
-      this.el = el; this.doc = doc; this.cards = cards; this.cardsHtml = cardsHtml; this.key = "teen_rate"; this.cols = [HOME]; this.pick = null;
+      this.el = el; this.doc = doc; this.cards = cards; this.cardsHtml = cardsHtml; this.key = "teen_rate"; this.cols = []; this.showState = false; this.pick = null;
       this.by = Object.fromEntries(doc.features.map(f => [f.properties.NAME, f]));
       this.build();
     }
@@ -60,9 +64,11 @@
         <p class="muted small">Each team adds its own comparison cities and towns. Numbers in brackets are 95% confidence intervals. Click a city or town on the map, or its name in the table, to highlight it in both.</p>
         <div class="tscroll ttable"></div>
         <label class="tadd"><span class="sr">Add a city or town to the table</span><select data-k="add"></select></label>
+        <label class="check tstate"><input type="checkbox" data-k="state"> <span>Show the Massachusetts column</span></label>
         <details class="about ttab"><summary><span class="tbtn"><span class="tbtn-open">▸ About these data</span><span class="tbtn-close">▾ Hide: About these data</span></span><span class="tsum">The data in this tab: teen births, housing for each city or town, and CDC measures for cities</span></summary><div class="dcards">${fold}</div></details>`;
       this.el.querySelector("[data-k=by]").onchange = e => { this.key = e.target.value; this.draw(); };
       this.el.querySelector("[data-k=add]").onchange = e => { if (e.target.value) this.add(e.target.value); };
+      this.el.querySelector("[data-k=state]").onchange = e => { this.showState = e.target.checked; this.renderTable(); };
       this.legendEl = this.el.querySelector(".tlegend");
       const mapEl = this.el.querySelector(".tmap");
       this.svg = L.svg();
@@ -117,14 +123,21 @@
       if (first) box.scrollLeft += first.getBoundingClientRect().left - box.getBoundingClientRect().left - box.clientWidth / 2 + first.offsetWidth / 2;
     }
 
-    add(name) { if (this.by[name] && !this.cols.includes(name)) { this.cols.push(name); this.renderTable(); } }
-    remove(name) { this.cols = this.cols.filter(c => c !== name); this.renderTable(); }
+    add(name) { if (this.by[name] && !this.cols.includes(name)) { this.cols.push(name); this.renderTable(); this.zoomToCols(); } }
+    remove(name) { this.cols = this.cols.filter(c => c !== name); this.renderTable(); this.zoomToCols(); }
+
+    /** Her ask 2026-11-25: the map zooms to the cities in the table, widening as more are added, and goes back to
+        all of Massachusetts when the table has none. */
+    zoomToCols() {
+      const picked = this.cols.length ? L.featureGroup(this.layer.getLayers().filter(l => this.cols.includes(l.feature.properties.NAME))) : this.layer;
+      this.map.fitBounds(picked.getBounds(), { padding: [12, 12], maxZoom: 13 });
+    }
 
     renderTable() {
-      const cols = this.cols.map(n => this.by[n].properties), st = this.doc.state, n = cols.length + 2;
-      const head = `<tr><th scope="col"></th>${cols.map(p => `<th scope="col" data-col="${esc(p.NAME)}"><span class="tpick" role="button" tabindex="0">${esc(p.NAME)}</span>${p.NAME === HOME ? "" : ` <button type="button" class="xrm" data-rm="${esc(p.NAME)}" aria-label="Remove ${esc(p.NAME)}">×</button>`}</th>`).join("")}<th scope="col">Massachusetts</th></tr>`;
+      const cols = this.cols.map(n => this.by[n].properties), st = this.doc.state, withState = stateShown(this.cols, this.showState), n = cols.length + 1 + Number(withState);
+      const head = `<tr><th scope="col"></th>${cols.map(p => `<th scope="col" data-col="${esc(p.NAME)}"><span class="tpick" role="button" tabindex="0">${esc(p.NAME)}</span>${` <button type="button" class="xrm" data-rm="${esc(p.NAME)}" aria-label="Remove ${esc(p.NAME)}">×</button>`}</th>`).join("")}${withState ? `<th scope="col">Massachusetts</th>` : ""}</tr>`;
       const group = t => `<tr class="grp"><th colspan="${n}" scope="colgroup">${esc(t)}</th></tr>`;
-      const row = (label, f, stateCells) => `<tr><th scope="row">${esc(label)}</th>${cols.map(p => `<td data-col="${esc(p.NAME)}">${cell(f(p))}</td>`).join("")}<td>${cell(stateCells)}</td></tr>`;
+      const row = (label, f, stateCells) => `<tr><th scope="row">${esc(label)}</th>${cols.map(p => `<td data-col="${esc(p.NAME)}">${cell(f(p))}</td>`).join("")}${withState ? `<td>${cell(stateCells)}</td>` : ""}</tr>`;
       this.el.querySelector(".ttable").innerHTML = `<table><thead>${head}</thead><tbody>` +
         group("Teen births · Massachusetts Department of Public Health") + row(TEEN_LABEL, teenCell, [st.teen_rate.toFixed(1)]) +
         group("Housing · U.S. Census Bureau, American Community Survey") +
@@ -137,12 +150,14 @@
         b.onclick = go; b.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } };
       });
       this.markTable();
+      const box = this.el.querySelector("[data-k=state]");
+      box.closest("label").hidden = !this.cols.length; box.checked = this.showState;
       const add = this.el.querySelector("[data-k=add]");
-      add.innerHTML = `<option value="">+ Add another city or town…</option>` + Object.keys(this.by).filter(t => !this.cols.includes(t)).sort().map(t => `<option>${esc(t)}</option>`).join("");
+      add.innerHTML = `<option value="">${this.cols.length ? "+ Add another city or town…" : "+ Add a city or town…"}</option>` + Object.keys(this.by).filter(t => !this.cols.includes(t)).sort().map(t => `<option>${esc(t)}</option>`).join("");
     }
   }
 
-  const api = { NOTE, TEEN_LABEL, PLACES_ROWS, housingCell, teenCell, placesCell, townBreaks, TownArea };
+  const api = { NOTE, TEEN_LABEL, PLACES_ROWS, housingCell, teenCell, placesCell, stateShown, townBreaks, TownArea };
   if (typeof module === "object" && module.exports) module.exports = api;
   else root.TownArea = api;
 })(typeof self !== "undefined" ? self : this);
