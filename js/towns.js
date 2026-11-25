@@ -19,9 +19,10 @@
     ["EMOTIONSPT", "Lack of social and emotional support among adults, %"], ["HOUSINSECU", "Housing insecurity in the past 12 months among adults, %"],
     ["SHUTUTILITY", "Utility services threat in the past 12 months among adults, %"]];
   const HOME = "Chelsea";
-  // Her ask 2026-11-25: each city in the comparison table is outlined in its own color, matched in the table and
-  // the legend. None is orange, red or yellow, so they stand apart from the town colors and the yellow highlight.
-  const CITY_COLORS = ["#1d4ed8", "#7c3aed", "#0f766e", "#c026d3", "#15803d", "#475569"];
+  // Her asks 2026-11-25: each city in the comparison table is outlined in its own color, matched in the table and
+  // the legend, and the colors contrast with one another (blue, lime green, magenta, black first). None is orange,
+  // red or yellow, so they stand apart from the town colors and the yellow highlight.
+  const CITY_COLORS = ["#1d4ed8", "#84cc16", "#c026d3", "#111827", "#06b6d4", "#7c3aed"];
   const cityColor = i => CITY_COLORS[i % CITY_COLORS.length];
 
   /** [value, "(low, high)"] for a Census housing layer, its 95% interval from the published 90% margin. */
@@ -107,9 +108,9 @@
         const fill = c >= 0 ? pal[c] : k === "teen_rate" && p.teen_status === "hidden" ? "url(#thatch)" : "#c9cecc";
         // A city in the table keeps its own color, thicker when highlighted (her ruling 2026-11-25: map and column match).
         const ci = this.cols.indexOf(p.NAME);
-        if (ci >= 0) return { fillColor: fill, fillOpacity: c >= 0 ? 0.88 : 1, color: cityColor(ci), weight: p.NAME === this.pick ? 6 : 3.5 };
-        if (p.NAME === this.pick) return { fillColor: fill, fillOpacity: c >= 0 ? 0.88 : 1, color: "#111", weight: 4 };
-        return { fillColor: fill, fillOpacity: c >= 0 ? 0.88 : 1, color: home ? "#1d2522" : "#fff", weight: home ? 2.6 : 0.5 };
+        if (ci >= 0) return { fillColor: fill, fillOpacity: c >= 0 ? 0.88 : 1, color: cityColor(ci), weight: p.NAME === this.pick ? 6 : 3.5, dashArray: null };
+        if (p.NAME === this.pick) return { fillColor: fill, fillOpacity: c >= 0 ? 0.88 : 1, color: "#111", weight: 4, dashArray: "7 5" };
+        return { fillColor: fill, fillOpacity: c >= 0 ? 0.88 : 1, color: home ? "#1d2522" : "#fff", weight: home ? 2.6 : 0.5, dashArray: null };
       });
       this.layer.eachLayer(l => { if (l.feature.properties.NAME === HOME || this.cols.includes(l.feature.properties.NAME)) l.bringToFront(); });
       this.layer.eachLayer(l => { if (l.feature.properties.NAME === this.pick) l.bringToFront(); });
