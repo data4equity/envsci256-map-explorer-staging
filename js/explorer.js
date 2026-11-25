@@ -793,7 +793,7 @@
       const heading = facts.buffers.length ? `Your ${facts.buffers.length > 1 ? "buffers" : "buffer"} in numbers` : storeTile ? "Your map in numbers" : "Public open space";
       const button = facts.buffers.length ? `<button type="button" class="ibtn" data-bandnote aria-label="How these numbers are estimated" aria-expanded="${!!this.bandNoteOpen}">i</button>` : "";
       b.style.setProperty("--edge", facts.buffers[0]?.color || "#2f7d32");
-      b.innerHTML = `<div class="bhd">${heading}${button}</div>${body}${storeTile}` + (button && this.bandNoteOpen ? `<div class="colnote">Estimates: each census tract's count times the share of its land inside the buffer. They assume people and homes are spread evenly across each census tract.</div>` : "");
+      b.innerHTML = `<div class="bhd">${heading}${button}</div>${body}${storeTile}` + (button && this.bandNoteOpen ? `<div class="colnote"><b>How these numbers are estimated.</b> The map can't see where people live inside a census tract. So when 40% of a tract's land is inside the buffer, the map counts 40% of that tract's residents as inside the buffer. That treats people as if they were spread evenly across the tract, so read these numbers as estimates, not exact counts.</div>` : "");
       const toggle = b.querySelector("[data-bandnote]");
       if (toggle) toggle.onclick = () => { this.bandNoteOpen = !this.bandNoteOpen; this.renderBand(); };
     }
