@@ -140,7 +140,8 @@
       if (best && lb > best.miles) break;
       let d;
       if (turf.booleanPointInPolygon(pt, f)) d = 0;
-      else { const ls = turf.polygonToLine(f); d = Math.min(...(ls.type === "FeatureCollection" ? ls.features : [ls]).map(l => turf.pointToLineDistance(pt, l, { units: "miles" }))); }
+      // Measure to every ring on its own: a clipped park can have holes or come in pieces (her bug report 2026-11-25).
+      else { const g = f.geometry || f, rings = (g.type === "MultiPolygon" ? g.coordinates : [g.coordinates]).flat(); d = Math.min(...rings.map(r => turf.pointToLineDistance(pt, turf.lineString(r), { units: "miles" }))); }
       if (!best || d < best.miles) best = { miles: d, feature: f };
       if (d === 0) break;
     }
