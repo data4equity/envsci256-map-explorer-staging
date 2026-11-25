@@ -111,13 +111,15 @@
     return value == null || base == null ? null : base * value / 100;
   }
 
-  function peopleLine(town, buffer, miles, residents, people, phrase) {
+  /** Number tiles for one buffer (her pick 2026-11-25, C1): [{ big, text }]. With two buffers each row is labeled,
+      so the tile text drops the buffer's name ("rows"). The measure's tile is left out when it has no count. */
+  function peopleTiles(town, buffer, miles, residents, people, phrase, rows = false) {
     const number = n => Math.round(n).toLocaleString("en-US");
-    const percent = v => v.total ? Math.round(100 * v.inside / v.total) : 0;
-    const opening = buffer.key === "both" ? "Inside both buffers" : `Inside the ${miles}-mile ${buffer.label} buffer`;
-    let line = `${opening}: about ${number(residents.inside)} of ${town}'s ${number(residents.total)} residents (${percent(residents)}%)`;
-    if (people && people.total > 0 && phrase) line += ` and about ${number(people.inside)} of its ${number(people.total)} ${phrase} (${percent(people)}%)`;
-    return line + ".";
+    const percent = v => `${v.total ? Math.round(100 * v.inside / v.total) : 0}%`;
+    const where = rows ? "" : buffer.key === "both" ? " live inside both buffers" : ` live inside the ${miles}-mile ${buffer.label} buffer`;
+    const tiles = [{ big: percent(residents), text: `of ${town}'s residents${where} (about ${number(residents.inside)} of ${number(residents.total)})` }];
+    if (people && people.total > 0 && phrase) tiles.push({ big: percent(people), text: `of its ${phrase}${rows ? "" : " live inside it"} (about ${number(people.inside)} of ${number(people.total)})` });
+    return tiles;
   }
 
   const TEAMS = QUESTIONS.flatMap(q => [1, 2].map(n => ({ id: `team-${q.id}${n}`, name: `Team ${q.id.toUpperCase()}${n}`, question: q })));
@@ -139,7 +141,7 @@
 
   function showLayers(question) { return [...question.show]; }
 
-  const api = { PEOPLE, countFor, peopleLine, showLayers, QUESTIONS, TEAMS, teamById, startState, fileLayerKeys, conditionLayers, storeLayers };
+  const api = { PEOPLE, countFor, peopleTiles, showLayers, QUESTIONS, TEAMS, teamById, startState, fileLayerKeys, conditionLayers, storeLayers };
   if (typeof module === "object" && module.exports) module.exports = api;
   else root.TermTeams = api;
 })(typeof self !== "undefined" ? self : this);

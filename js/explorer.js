@@ -30,6 +30,9 @@
   const fmt = v => v == null ? "–" : (Math.round(v * 10) / 10).toFixed(1);
   // Team pages, her pick 2026-11-25 (Choice 2 A). Draft wording until she approves it.
   const WHY_ONE_OUTLINE = "<b>Why one outline?</b> Where the buffers around two parks overlap, the map joins them into one outline. Separate rings around every park would overlap into a tangle of lines. The joined outline also marks the exact area behind the percents in the tract table. To see the buffer around one park, untick Select all parks and tick that park, or click Zoom next to its name.";
+  // Her pick 2026-11-25 (A2): a light tint inside each team buffer, so the gaps in it show as untinted ground.
+  const BUF_TINT = 0.16;
+  const tint = hex => `rgba(${[1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16)).join(",")},${BUF_TINT})`;
   const selectAllBox = (key, text, offCount, total) => `<label class="selall"><input type="checkbox" data-k="${key}" ${C.selectAllState(offCount, total).checked ? "checked" : ""}><span>${text}</span></label>`;
   const el = (tag, attrs = {}, html = "") => { const e = document.createElement(tag); for (const k in attrs) e.setAttribute(k, attrs[k]); e.innerHTML = html; return e; };
 
@@ -336,7 +339,7 @@
     }
 
     gBufferThese() {
-      const s = this.s, w = el("div", { class: "ctl" }), colors = C.bufferPairColors(s.buf);
+      const s = this.s, w = el("div", { class: "ctl" }), colors = C.bufferPairColors(s.buf, s.ramp);
       const labels = { parks: "Parks and open space", routes: "Major roads", chcs: "Community health centers", stores: "Stores shown above" };
       w.innerHTML = C.TEAM_BUF_ORDER.filter(key => this.opts.layers.includes(key)).map(key => {
         const color = colors.find(item => item.key === key), disabled = !this.groupShown(key) || (!color && s.buf.length >= 2);
@@ -495,7 +498,7 @@
         if (s.miles > 0) {
           const features = { parks: this.parks, routes: this.routes, chcs: this.centers, stores: this.places };
           const labels = { parks: "parks", routes: "roads", chcs: "health centers", stores: "stores" };
-          this.pair = C.bufferPairColors(s.buf).map(({ key, color }) => ({ key, color, union: C.mergedBuffer(features[key], s.miles), label: labels[key] }));
+          this.pair = C.bufferPairColors(s.buf, s.ramp).map(({ key, color }) => ({ key, color, union: C.mergedBuffer(features[key], s.miles), label: labels[key] }));
           this.overlap = this.pair.length === 2 ? C.overlapOf(this.pair[0].union, this.pair[1].union) : null;
           this.pair.forEach(p => { this.touchBy[p.key] = C.touchedTracts(this.sel, p.union ? [p.union] : []); });
           this.touchBoth = C.touchedTracts(this.sel, this.overlap ? [this.overlap] : []);
@@ -621,15 +624,18 @@
       });
       this.townLines.forEach(line => L.geoJSON(line, { ...opts, style: { color: "#1d2522", weight: 1.2, dashArray: "4 3", fill: false }, interactive: false }).addTo(this.lyr.cond));
       const options = { renderer: this.bufRenderer, pane: "buffers", interactive: false };
+      this.pair.filter(p => p.union).forEach(p => L.geoJSON(p.union, { ...options, style: { stroke: false, fillColor: p.color, fillOpacity: BUF_TINT } }).addTo(this.lyr.pair));
       if (this.overlap) {
         L.geoJSON(this.overlap, { ...options, style: { stroke: false, fillColor: `url(#${this.overlapId})`, fillOpacity: 1 } }).addTo(this.lyr.pair);
-        const svg = this.bufRenderer._container;
-        if (!svg.querySelector(`#${this.overlapId}`)) {
+        // The buffer layer's SVG exists only once the map is ready; a page opened from a link draws before that.
+        this.map.whenReady(() => {
+          const svg = this.bufRenderer._container;
+          if (svg.querySelector(`#${this.overlapId}`)) return;
           const ns = "http://www.w3.org/2000/svg", defs = document.createElementNS(ns, "defs"), pattern = document.createElementNS(ns, "pattern");
           pattern.setAttribute("id", this.overlapId); pattern.setAttribute("patternUnits", "userSpaceOnUse"); pattern.setAttribute("width", "7"); pattern.setAttribute("height", "7"); pattern.setAttribute("patternTransform", "rotate(45)");
           [["7", "#ffffff", ".45"], ["2", "#4a148c", "1"]].forEach(([width, fill, opacity]) => { const rect = document.createElementNS(ns, "rect"); rect.setAttribute("width", width); rect.setAttribute("height", "7"); rect.setAttribute("fill", fill); rect.setAttribute("fill-opacity", opacity); pattern.append(rect); });
           defs.append(pattern); svg.prepend(defs);
-        }
+        });
       }
       this.pair.filter(p => p.union).forEach(p => L.geoJSON(p.union, { ...options, style: { color: "#ffffff", weight: 5, fill: false, lineJoin: "round" } }).addTo(this.lyr.pair));
       this.pair.filter(p => p.union).forEach(p => L.geoJSON(p.union, { ...options, style: { color: p.color, weight: 2.4, fill: false } }).addTo(this.lyr.pair));
@@ -691,7 +697,7 @@
         if (s.show.includes("chcs")) rows.push('<div><i class="sw hc"></i>Community health centers</div>');
         (this.opts.stores || []).filter(store => s.show.includes(store.key)).forEach(store => rows.push(`<div><i class="sw dot" style="background:${STORE_COLORS[store.key]}"></i>${esc(store.label)}</div>`));
         if ((this.opts.stores || []).filter(store => s.show.includes(store.key)).length >= 2) rows.push('<div><svg class="sw split" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 0 A6 6 0 0 0 6 12 Z" fill="#c62828"/><path d="M6 0 A6 6 0 0 1 6 12 Z" fill="#f9a825"/></svg>A store on two or more of these lists</div>');
-        this.pair.forEach(b => rows.push(`<div><i class="sw ln" style="border-color:${b.color}"></i>${s.miles}-mile buffer, ${esc(b.label)}</div>`));
+        this.pair.forEach(b => rows.push(`<div><i class="sw ln" style="border-color:${b.color};background:${tint(b.color)}"></i>${s.miles}-mile buffer, ${esc(b.label)}</div>`));
         if (this.pair.length === 2) rows.push('<div><i class="sw both"></i>Inside both buffers</div>');
         this.legendEl.innerHTML = `<div class="lt">${esc(s.legend)}</div>` + br.slice(1).map((v, i) => `<div><i class="sw" style="background:${this.pal[i]}"></i>${fmtFor(s.measure)(br[i])} – ${fmtFor(s.measure)(v)}</div>`).join("") + rows.join("") + `<div class="lsrc">${C.METHODS[s.method]}, ${Math.max(0, br.length - 1)} classes</div>`;
         return;
@@ -703,37 +709,47 @@
         `<div class="lsrc">${C.METHODS[s.method]}, ${Math.max(0, br.length - 1)} classes</div>`;
     }
 
-    cityLines() {
-      if (!this.team) return { green: [], people: [] };
-      const T = root.TermTeams, green = [], people = [];
-      this.s.towns.forEach(town => {
-        if (this.opts.green) {
-          const item = this.green?.[town];
-          green.push(item ? `${town}: ${(item.share * 100).toFixed(1)}% of its land is public open space (${Math.round(item.acres).toLocaleString("en-US")} acres).` : "Counting…");
-        }
-        if (!this.pair.length) return;
-        if (!this.shares) { people.push("Counting…"); return; }
+    /** What the buffers hold in each town, for the card above the map: [{ town, green, rows }]. A row is
+        { label, color, tiles } per buffer (plus "Inside both buffers"); "counting" while the land shares load. */
+    cityFacts() {
+      const s = this.s, T = root.TermTeams, two = this.pair.length === 2;
+      return s.towns.map(town => {
+        const item = this.opts.green ? (this.green?.[town] || "counting") : null;
+        if (!this.pair.length) return { town, green: item, rows: [] };
+        if (!this.shares) return { town, green: item, rows: "counting" };
         const tracts = this.sel.filter(f => f.properties.City_Town === town);
-        const buffers = [...this.pair, ...(this.pair.length === 2 ? [{ key: "both" }] : [])];
-        buffers.forEach(buffer => {
+        const buffers = [...this.pair, ...(two ? [{ key: "both", label: "both", color: null }] : [])];
+        const rows = buffers.map(buffer => {
           const estimate = count => C.estimateInside(tracts.map(f => ({ share: this.shares[f.properties.TractFIPS]?.[buffer.key] ?? 0, count: count(f.properties) })));
           const residents = estimate(p => p.pop_total);
-          const measured = estimate(p => T.countFor(this.s.measure, p, this.countsDoc?.values[p.TractFIPS] || {}));
-          people.push(T.peopleLine(town, buffer, this.s.miles, residents, measured, T.PEOPLE[this.s.measure]));
+          const measured = estimate(p => T.countFor(s.measure, p, this.countsDoc?.values[p.TractFIPS] || {}));
+          return { key: buffer.key, color: buffer.color, label: buffer.key === "both" ? "Inside both buffers" : `${s.miles}-mile ${buffer.label} buffer`,
+            tiles: T.peopleTiles(town, buffer, s.miles, residents, measured, T.PEOPLE[s.measure], two) };
         });
-        people.push("Estimates: each census tract's count times the share of its land inside the buffer. They assume people and homes are spread evenly across each census tract.");
+        return { town, green: item, rows };
       });
-      return { green, people };
     }
 
-    /** The band above the map: green-space and inside-the-buffer lines, with the estimate note behind its i button. */
+    /** The card above the map (her picks 2026-11-25, C1 and N1): number tiles under a heading, one row per buffer
+        when there are two, and the estimate note behind its i button. */
     renderBand() {
-      const b = this.bandEl, city = this.cityLines(), isNote = line => line.startsWith("Estimates:");
-      const lines = [...city.green, ...city.people.filter(line => !isNote(line))], note = city.people.find(isNote);
-      b.hidden = !lines.length;
-      if (!lines.length) { b.innerHTML = ""; return; }
-      const button = note ? `<button type="button" class="ibtn" data-bandnote aria-label="How these numbers are estimated" aria-expanded="${!!this.bandNoteOpen}">i</button>` : "";
-      b.innerHTML = lines.map((line, i) => `<div>${esc(line)}${i === lines.length - 1 ? button : ""}</div>`).join("") + (note && this.bandNoteOpen ? `<div class="colnote">${esc(note)}</div>` : "");
+      const b = this.bandEl, facts = { buffers: this.pair, towns: this.team ? this.cityFacts() : [] };
+      const shown = facts.towns.filter(f => f.green || f.rows === "counting" || f.rows.length);
+      b.hidden = !shown.length;
+      if (!shown.length) { b.innerHTML = ""; return; }
+      const tile = (t, cls = "") => `<div class="btile ${cls}"${t.color ? ` style="--c:${t.color}"` : ""}><b>${esc(t.big)}</b><span>${esc(t.text)}</span></div>`;
+      const counting = '<div class="btile wait"><span>Counting…</span></div>';
+      const greenTile = f => f.green === "counting" ? counting : tile({ big: `${(f.green.share * 100).toFixed(1)}%`, text: `of ${f.town}'s land is public open space (${Math.round(f.green.acres).toLocaleString("en-US")} acres)` }, "green");
+      const two = facts.buffers.length === 2, many = shown.length > 1;
+      const body = shown.map(f => {
+        const rows = f.rows === "counting" ? `<div class="btiles">${counting}${f.green ? greenTile(f) : ""}</div>` : !two ? (f.rows.length || f.green ? `<div class="btiles">${f.rows.flatMap(r => r.tiles.map(t => tile({ ...t, color: r.color }))).join("")}${f.green ? greenTile(f) : ""}</div>` : "")
+          : f.rows.map(r => `<div class="brow"><div class="blab"><i class="sw ${r.key === "both" ? "both" : "ln"}"${r.color ? ` style="border-color:${r.color};background:${tint(r.color)}"` : ""}></i>${esc(r.label)}</div><div class="btiles">${r.tiles.map(t => tile({ ...t, color: r.color || "#4a148c" })).join("")}</div></div>`).join("") + (f.green ? `<div class="btiles">${greenTile(f)}</div>` : "");
+        return (many ? `<div class="btown">${esc(f.town)}</div>` : "") + rows;
+      }).join("");
+      const heading = facts.buffers.length ? `Your ${facts.buffers.length > 1 ? "buffers" : "buffer"} in numbers` : "Public open space";
+      const button = facts.buffers.length ? `<button type="button" class="ibtn" data-bandnote aria-label="How these numbers are estimated" aria-expanded="${!!this.bandNoteOpen}">i</button>` : "";
+      b.style.setProperty("--edge", facts.buffers[0]?.color || "#2f7d32");
+      b.innerHTML = `<div class="bhd">${heading}${button}</div>${body}` + (button && this.bandNoteOpen ? `<div class="colnote">Estimates: each census tract's count times the share of its land inside the buffer. They assume people and homes are spread evenly across each census tract.</div>` : "");
       const toggle = b.querySelector("[data-bandnote]");
       if (toggle) toggle.onclick = () => { this.bandNoteOpen = !this.bandNoteOpen; this.renderBand(); };
     }
@@ -849,6 +865,7 @@
         const tg = tile.getContext("2d"); tg.fillStyle = "rgba(255,255,255,.45)"; tg.fillRect(0, 0, 7, 7); tg.fillStyle = "#4a148c"; tg.fillRect(0, 0, 2, 7);
         pattern = g.createPattern(tile, "repeat"); pattern.setTransform(new DOMMatrix().rotate(45));
       }
+      if (this.team) this.pair.filter(b => b.union).forEach(b => { poly(b.union.geometry); g.globalAlpha = BUF_TINT; g.fillStyle = b.color; g.fill("evenodd"); g.globalAlpha = 1; });
       if (this.team && this.overlap) { poly(this.overlap.geometry); g.fillStyle = pattern; g.fill("evenodd"); }
       if (this.team) {
         g.lineJoin = "round";
@@ -900,7 +917,7 @@
         if (row.kind === "chcs") { g.fillStyle = CHC_COLOR; g.fillRect(x + 8, y - 10, 10, 10); }
         if (row.kind === "store") { g.beginPath(); g.arc(x + 13, y - 5, 6, 0, 2 * Math.PI); g.fillStyle = row.color; g.fill(); g.strokeStyle = "#1d2522"; g.lineWidth = 1; g.stroke(); }
         if (row.kind === "split") { row.colors.forEach((color, i) => { g.beginPath(); g.moveTo(x + 13, y - 5); g.arc(x + 13, y - 5, 6, -Math.PI / 2 + i * 2 * Math.PI / row.colors.length, -Math.PI / 2 + (i + 1) * 2 * Math.PI / row.colors.length); g.closePath(); g.fillStyle = color; g.fill(); }); g.beginPath(); g.arc(x + 13, y - 5, 6, 0, 2 * Math.PI); g.strokeStyle = "#1d2522"; g.lineWidth = 1; g.stroke(); }
-        if (row.kind === "buffer") { g.strokeStyle = row.color; g.lineWidth = 2.4; g.strokeRect(x, y - 14, 26, 18); }
+        if (row.kind === "buffer") { g.fillStyle = tint(row.color); g.fillRect(x, y - 14, 26, 18); g.strokeStyle = row.color; g.lineWidth = 2.4; g.strokeRect(x, y - 14, 26, 18); }
         if (row.kind === "both") { g.fillStyle = pattern; g.fillRect(x, y - 14, 26, 18); g.strokeStyle = "#aaa"; g.lineWidth = 1; g.strokeRect(x, y - 14, 26, 18); }
         g.fillStyle = "#1d2522"; y = wrap(g, row.text, x + 36, y, 250, 19) + 27;
       });

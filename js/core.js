@@ -227,8 +227,14 @@
     return { ...state, show, buf };
   }
 
-  function bufferPairColors(buf = []) {
-    return TEAM_BUF_ORDER.filter(key => buf.includes(key)).slice(0, 2).map((key, i) => ({ key, color: BUF_PAIR_COLORS[i] }));
+  // Her pick 2026-11-25 (A2): a buffer's color stays apart from the tract colors, so its tint reads on every map.
+  // Orange tracts take a blue buffer (teal and blue for two); blue tracts take teal for the second buffer.
+  const BUF_COLORS_FOR_RAMP = { Oranges: { one: ["#1565c0"], two: ["#0f766e", "#1565c0"] }, Blues: { one: BUF_PAIR_COLORS, two: ["#ea580c", "#0f766e"] } };
+
+  function bufferPairColors(buf = [], ramp) {
+    const keys = TEAM_BUF_ORDER.filter(key => buf.includes(key)).slice(0, 2), set = BUF_COLORS_FOR_RAMP[ramp];
+    const colors = set ? (keys.length === 2 ? set.two : set.one) : BUF_PAIR_COLORS;
+    return keys.map((key, i) => ({ key, color: colors[i] }));
   }
 
   function toggleBuffer(buf = [], key) {
