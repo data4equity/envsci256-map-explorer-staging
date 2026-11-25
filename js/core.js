@@ -353,12 +353,17 @@
     return pointsInTracts(pointsInBbox(matching, paddedBbox(tracts)), tracts);
   }
 
+  /** The Select all box on a team page's park or health center list: checked, clear, or mixed. */
+  function selectAllState(offCount, total) {
+    return { checked: total > 0 && offCount === 0, indeterminate: offCount > 0 && offCount < total };
+  }
+
   function sourceLine(parts) {
     const normalized = parts.map(part => (part || "").trim().replace(/\.$/, "").trim()).filter(Boolean);
     return "Sources: " + [...new Set(normalized)].join("; ") + ".";
   }
 
-  const api = { sourceLine, teamGroupShown, normalizeTeamLayers, TEAM_BUF_ORDER, BUF_PAIR_COLORS, STORE_TYPES, bufferPairColors, toggleBuffer, migrateTeamState, clipToTowns, mergedBuffer, polygonPieces, overlapOf, landShare, sharePercent, shareCell, tractShares, greenShare, cityGreen, estimateInside, slicePaths, listNames, storePlacesFor, placeTypes, fitProjection, pathFor, STEP_KEYS, resetStep, NO_CONDITION, RAMPS, METHODS, rampColors, breaks, classOf, paddedBbox, townsInBbox, filterRoutes, clipToBbox,
+  const api = { sourceLine, selectAllState, teamGroupShown, normalizeTeamLayers, TEAM_BUF_ORDER, BUF_PAIR_COLORS, STORE_TYPES, bufferPairColors, toggleBuffer, migrateTeamState, clipToTowns, mergedBuffer, polygonPieces, overlapOf, landShare, sharePercent, shareCell, tractShares, greenShare, cityGreen, estimateInside, slicePaths, listNames, storePlacesFor, placeTypes, fitProjection, pathFor, STEP_KEYS, resetStep, NO_CONDITION, RAMPS, METHODS, rampColors, breaks, classOf, paddedBbox, townsInBbox, filterRoutes, clipToBbox,
     pointsInBbox, pointsInTracts, nearestEdge, storeRows, filterOpenSpace, bufferEach, touchedTracts, countByTown, touchingGroup, acsRange, encodeState, decodeState };
   if (typeof module === "object" && module.exports) module.exports = api;
   else root.ExplorerCore = api;

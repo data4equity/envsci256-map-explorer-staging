@@ -35,6 +35,9 @@ main.wrap { padding-block: 16px 40px; display: grid; gap: 14px; }
 .xmapcol { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) 230px; }
 .xviewbar { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--line); font-size: .82rem; }
 .xviewbar input[type=range] { width: 150px; }
+.xband { grid-column: 1 / -1; display: grid; gap: 3px; padding: 7px 12px; background: #fff6ef; border-bottom: 1px solid #f3b48a; color: var(--fg); font-size: .84rem; }
+.xband[hidden] { display: none; }
+.xband .colnote { margin-top: 3px; font-size: .8rem; }
 .peek[aria-pressed="true"] { background: var(--accent); color: #fff; }
 .xstrip { border-left: 1px solid var(--line); padding: 10px; display: grid; gap: 8px; align-content: start; background: var(--panel); }
 .xstrip .inhead { display: flex; align-items: center; gap: 4px; }
@@ -85,6 +88,13 @@ select[multiple] { padding: 2px; }
 .plist { max-height: 230px; overflow: auto; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
 .ctl .prow { display: grid; grid-template-columns: auto 1fr auto auto; gap: 6px; align-items: center; padding: 5px 8px; border-bottom: 1px solid var(--line); color: var(--fg); font-size: .8rem; }
 .ctl .prow[hidden] { display: none; }
+.ctl label.selall { display: flex; gap: 6px; align-items: center; padding: 5px 8px; font-size: .8rem; font-weight: 600; color: var(--fg); }
+.pk-why { margin-top: 6px; }
+.xpreview { width: min(980px, 94vw); max-height: 94vh; border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; display: grid; gap: 10px; }
+.xpreview:not([open]) { display: none; }
+.xpreview::backdrop { background: rgba(20, 30, 26, .55); }
+.xpreview h2 { margin: 0; font-size: 1rem; }
+.xpreview img { width: 100%; height: auto; max-height: 72vh; object-fit: contain; border: 1px solid var(--line); background: #fff; }
 .zbtn { border: 1px solid var(--accent); color: var(--accent); background: #fff; border-radius: 5px; font: inherit; font-size: .72rem; padding: 1px 7px; cursor: pointer; }
 .linkout textarea { font: .74rem var(--mono); }
 

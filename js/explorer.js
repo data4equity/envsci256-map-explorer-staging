@@ -28,6 +28,9 @@
 
   const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const fmt = v => v == null ? "–" : (Math.round(v * 10) / 10).toFixed(1);
+  // Team pages, her pick 2026-11-25 (Choice 2 A). Draft wording until she approves it.
+  const WHY_ONE_OUTLINE = "<b>Why one outline?</b> Where the buffers around two parks overlap, the map joins them into one outline. Separate rings around every park would overlap into a tangle of lines. The joined outline also marks the exact area behind the percents in the tract table. To see the buffer around one park, untick Select all parks and tick that park, or click Zoom next to its name.";
+  const selectAllBox = (key, text, offCount, total) => `<label class="selall"><input type="checkbox" data-k="${key}" ${C.selectAllState(offCount, total).checked ? "checked" : ""}><span>${text}</span></label>`;
   const el = (tag, attrs = {}, html = "") => { const e = document.createElement(tag); for (const k in attrs) e.setAttribute(k, attrs[k]); e.innerHTML = html; return e; };
 
   /** Property holding a measure's value / 95% range (PLACES columns end in _CrudePrev / _Crude95CI). */
@@ -105,6 +108,8 @@
       this.legendEl = el("div", { class: "xlegend" });
       this.focusEl = el("div", { class: "xfocus" }); this.focusEl.hidden = true;
       this.tableEl = el("div", { class: "xtable" });
+      // Her pick 2026-11-25 (Choice 1 B): what the buffer holds sits in a band above the map, where it is hard to miss.
+      this.bandEl = el("div", { class: "xband", "aria-live": "polite" }); this.bandEl.hidden = true;
       const mapCol = el("div", { class: "xmapcol" });
       const id = `xstrength-${++explorerCount}`;
       this.overlapId = `xp-ov-${explorerCount}`;
@@ -121,7 +126,7 @@
       this.insetEl = el("div", { class: "inbox" });
       toggle.onclick = () => { this.insetOff = !this.insetOff; this.insetEl.hidden = this.insetOff; toggle.textContent = this.insetOff ? "Show the inset" : "Remove the inset"; };
       header.append(toggle); strip.append(header, this.insetEl, this.legendEl);
-      this.mapEl.append(this.focusEl); mapCol.append(bar, this.mapEl, strip);
+      this.mapEl.append(this.focusEl); mapCol.append(bar, this.bandEl, this.mapEl, strip);
       r.append(this.panel, mapCol, this.tableEl);
       this.open = new Set(this.team ? ["Filter", "Show"] : ["Filter"]);
       this.map = L.map(this.mapEl, { preferCanvas: true, zoomSnap: 0.25 });
@@ -290,8 +295,8 @@
       if (!list.length) return `<div class="muted small">No open space matches these filters near your towns.</div>`;
       return `<div class="pk-head"><b>${this.team ? "Which parks show on the map?" : "Which parks get a buffer?"}</b><span class="muted small">${list.length - this.offParks.length} of ${list.length} in view</span></div>
         <div class="muted small">${this.team ? "Uncheck a park to switch it off. A switched-off park turns grey and gets no buffer. Click Zoom, or click a park on the map, to look at it up close." : "Uncheck a park to remove its buffer; a removed park turns grey. Click Zoom, or click a park on the map, to look at it up close."}</div>
-        <div class="row"><label for="xp-park-search" class="sr">Search parks</label><input id="xp-park-search" type="text" data-k="ps" placeholder="Search by name or town"><button class="btn ghost" data-k="pall" type="button">All</button><button class="btn ghost" data-k="pnone" type="button">None</button></div>
-        <div class="plist">${list.map(f => { const p = f.properties; return `<label class="prow"><input type="checkbox" data-pid="${p.id}" ${s.off.includes(p.id) ? "" : "checked"}><span>${esc(p.SITE_NAME || "Unnamed open space")}</span><span class="muted">${esc(p.Town)} · ${fmt(p.GIS_ACRES)} ac</span><button type="button" class="zbtn" data-zoom="${p.id}">Zoom</button></label>`; }).join("")}</div>`;
+        <div class="row"><label for="xp-park-search" class="sr">Search parks</label><input id="xp-park-search" type="text" data-k="ps" placeholder="Search by name or town">${this.team ? "" : '<button class="btn ghost" data-k="pall" type="button">All</button><button class="btn ghost" data-k="pnone" type="button">None</button>'}</div>
+        ${this.team ? selectAllBox("pselall", "Select all parks", this.offParks.length, list.length) : ""}<div class="plist">${list.map(f => { const p = f.properties; return `<label class="prow"><input type="checkbox" data-pid="${p.id}" ${s.off.includes(p.id) ? "" : "checked"}><span>${esc(p.SITE_NAME || "Unnamed open space")}</span><span class="muted">${esc(p.Town)} · ${fmt(p.GIS_ACRES)} ac</span><button type="button" class="zbtn" data-zoom="${p.id}">Zoom</button></label>`; }).join("")}</div>${this.team ? `<div class="muted small pk-why">${WHY_ONE_OUTLINE}</div>` : ""}`;
     }
 
     centerPicker() {
@@ -300,7 +305,7 @@
       if (!list.length) return `<div class="muted small">No community health centers near your towns.</div>`;
       return `<div class="pk-head"><b>${this.team ? "Which health centers show on the map?" : "Which health centers get a buffer?"}</b><span class="muted small">${list.length - this.offCenters.length} of ${list.length} in view</span></div>
         <div class="muted small">${this.team ? "Uncheck a center to switch it off. A switched-off center turns grey and gets no buffer." : "Uncheck a center to remove its buffer; a removed center turns grey. Choose the buffer distance in step 4."}</div>
-        <div class="row"><button class="btn ghost" data-k="call" type="button">All</button><button class="btn ghost" data-k="cnone" type="button">None</button></div>
+        ${this.team ? selectAllBox("cselall", "Select all health centers", this.offCenters.length, list.length) : '<div class="row"><button class="btn ghost" data-k="call" type="button">All</button><button class="btn ghost" data-k="cnone" type="button">None</button></div>'}
         <div class="plist">${list.map(f => { const p = f.properties; return `<label class="prow"><input type="checkbox" data-cid="${p.id}" ${off.includes(p.id) ? "" : "checked"}><span>${esc(p.NAME)}</span><span class="muted">${esc(p.ADDRESS)} · ${esc(townName(p.GEOG_MUNI))}</span></label>`; }).join("")}</div>`;
     }
 
@@ -323,8 +328,10 @@
       w.querySelectorAll(".plist [data-pid]").forEach(c => c.onchange = () => this.toggleOff(+c.dataset.pid));
       w.querySelectorAll(".plist [data-zoom]").forEach(b => b.onclick = e => { e.preventDefault(); this.set("focus", +b.dataset.zoom); });
       w.querySelectorAll(".plist [data-cid]").forEach(c => c.onchange = () => this.toggleCenter(+c.dataset.cid));
-      if (q("call")) { q("call").onclick = () => this.set("chcsOff", []); q("cnone").onclick = () => this.set("chcsOff", this.centerList.map(f => f.properties.id)); }
-      if (q("pall")) { q("pall").onclick = () => this.set("off", []); q("pnone").onclick = () => this.set("off", this.parkList.map(f => f.properties.id)); q("ps").oninput = e => { const v = e.target.value.toLowerCase(); w.querySelectorAll(".prow").forEach(r => { r.hidden = !r.textContent.toLowerCase().includes(v); }); }; }
+      // Select all (her pick 2026-11-25, Choice 2 A): ticked switches every listed item on, unticked switches them all off.
+      const selectAll = (k, list, offList, key) => { const box = q(k); if (!box) return; box.indeterminate = C.selectAllState(offList.length, list.length).indeterminate; box.onchange = () => this.set(key, box.checked ? [] : list.map(f => f.properties.id)); };
+      selectAll("pselall", this.parkList, this.offParks, "off"); selectAll("cselall", this.centerList, this.offCenters, "chcsOff");
+      if (q("ps")) q("ps").oninput = e => { const v = e.target.value.toLowerCase(); w.querySelectorAll(".prow").forEach(r => { r.hidden = !r.textContent.toLowerCase().includes(v); }); };
       return w;
     }
 
@@ -373,7 +380,7 @@
       w.innerHTML = `<label>Map title (what, where, when)<input type="text" data-k="ti" value="${esc(s.title)}" placeholder="${esc(this.defaultTitle())}"></label>
         <div class="row"><button class="btn" type="button" data-k="save">Save map image</button><button class="btn ghost" type="button" data-k="link">Copy link</button></div><div class="linkout" aria-live="polite"></div>`;
       w.querySelector("[data-k=ti]").oninput = e => { s.title = e.target.value; };
-      w.querySelector("[data-k=save]").onclick = () => this.saveImage();
+      w.querySelector("[data-k=save]").onclick = () => this.team ? this.previewImage() : this.saveImage();
       w.querySelector("[data-k=link]").onclick = () => this.copyLink(w.querySelector(".linkout"));
       return w;
     }
@@ -719,8 +726,21 @@
       return { green, people };
     }
 
+    /** The band above the map: green-space and inside-the-buffer lines, with the estimate note behind its i button. */
+    renderBand() {
+      const b = this.bandEl, city = this.cityLines(), isNote = line => line.startsWith("Estimates:");
+      const lines = [...city.green, ...city.people.filter(line => !isNote(line))], note = city.people.find(isNote);
+      b.hidden = !lines.length;
+      if (!lines.length) { b.innerHTML = ""; return; }
+      const button = note ? `<button type="button" class="ibtn" data-bandnote aria-label="How these numbers are estimated" aria-expanded="${!!this.bandNoteOpen}">i</button>` : "";
+      b.innerHTML = lines.map((line, i) => `<div>${esc(line)}${i === lines.length - 1 ? button : ""}</div>`).join("") + (note && this.bandNoteOpen ? `<div class="colnote">${esc(note)}</div>` : "");
+      const toggle = b.querySelector("[data-bandnote]");
+      if (toggle) toggle.onclick = () => { this.bandNoteOpen = !this.bandNoteOpen; this.renderBand(); };
+    }
+
     renderTable() {
       const s = this.s, t = this.tableEl;
+      this.renderBand();
       if (!s.towns.length) { t.innerHTML = `<div class="muted small pad">Filter to your towns in step 1 to see the tract table.</div>`; return; }
       const rows = [...this.sel].sort((a, b) => a.properties.City_Town.localeCompare(b.properties.City_Town) || a.properties.TractFIPS.localeCompare(b.properties.TractFIPS));
       const term = rangeField(s.measure), moeCol = !!(term && term.moe);
@@ -731,8 +751,7 @@
       const shownNotes = ["value", "ci", ...(moeCol ? ["moe"] : []), ...(this.opts.green ? ["green"] : []), ...(this.team ? [...this.pair.map(b => `buf-${b.key}`), ...(this.pair.length === 2 ? ["both"] : [])] : this.bufs.length ? ["buffer"] : [])];
       const note = shownNotes.includes(this.noteOpen) ? `<tr class="noterow"><td colspan="${4 + Number(moeCol) + Number(!!this.opts.green) + (this.team ? this.pair.length + Number(this.pair.length === 2) : Number(!!this.bufs.length))}"><div class="colnote">${COLUMN_NOTES[this.noteOpen]}</div></td></tr>` : "";
       // Option B (her pick, 2026-11-18): the summary is a visible button, with what the table holds spelled out.
-      const city = this.cityLines();
-      t.innerHTML = city.green.map(line => `<div class="cityline">${esc(line)}</div>`).join("") + city.people.map(line => `<div class="cityline${line.startsWith("Estimates:") ? " muted" : ""}">${esc(line)}</div>`).join("") + `<details class="ttab" ${this.tableOpen ? "open" : ""}><summary><span class="tbtn"><span class="tbtn-open">▸ Open the tract table</span><span class="tbtn-close">▾ Hide the tract table</span></span><span class="tsum">Every tract's value, its 95% confidence interval, and whether it is included in the buffer · ${rows.length} tracts${summary ? ` · ${summary}` : ""}${pick ? " · Click a row to see that tract on the map" : ""}${this.team && this.pair.length && !this.shares ? (this.sharesError ? " · The page could not load the land areas, so the table shows Yes or No only." : " · Counting the shares of land…") : ""}</span></summary>
+      t.innerHTML = `<details class="ttab" ${this.tableOpen ? "open" : ""}><summary><span class="tbtn"><span class="tbtn-open">▸ Open the tract table</span><span class="tbtn-close">▾ Hide the tract table</span></span><span class="tsum">Every tract's value, its 95% confidence interval, and whether it is included in the buffer · ${rows.length} tracts${summary ? ` · ${summary}` : ""}${pick ? " · Click a row to see that tract on the map" : ""}${this.team && this.pair.length && !this.shares ? (this.sharesError ? " · The page could not load the land areas, so the table shows Yes or No only." : " · Counting the shares of land…") : ""}</span></summary>
         <div class="tscroll"><table><thead><tr><th scope="col">GEOID</th><th scope="col">Town</th><th scope="col">Value (${esc(unitOf(s.measure))})${noteButton("value")}</th><th scope="col">95% Confidence Intervals${noteButton("ci")}</th>${moeCol ? `<th scope="col">Margin of error (±)${noteButton("moe")}</th>` : ""}${this.opts.green ? `<th scope="col">Public green space (% of land)${noteButton("green")}</th>` : ""}${this.team ? this.pair.map(b => `<th scope="col">${({ parks: "Parks", routes: "Roads", chcs: "Health centers", stores: "Store" })[b.key]} buffer${noteButton(`buf-${b.key}`)}</th>`).join("") + (this.pair.length === 2 ? `<th scope="col">Inside both${noteButton("both")}</th>` : "") : this.bufs.length ? `<th scope="col">Included in the buffer?${noteButton("buffer")}</th>` : ""}</tr>${note}</thead><tbody>` +
         rows.map(f => { const p = f.properties; return `<tr${pick ? ` data-fips="${esc(p.TractFIPS)}" tabindex="0"${p.TractFIPS === this.pick ? ' class="on"' : ""}` : ""}><td>${esc(p.TractFIPS)}</td><td>${esc(p.City_Town)}</td><td>${fmtFor(s.measure)(p[valueKey(s.measure)])}</td>${term ? termCells(p) : `<td>${esc((ck && p[ck]) || "–")}</td>`}${this.opts.green ? `<td>${this.green?.[p.City_Town]?.byTract[p.TractFIPS] ? (this.green[p.City_Town].byTract[p.TractFIPS].share * 100).toFixed(1) + "%" : "Counting…"}</td>` : ""}${this.team ? this.pair.map(b => `<td>${esc(C.shareCell(this.touchBy[b.key].has(p.TractFIPS), this.shares?.[p.TractFIPS]?.[b.key]))}</td>`).join("") + (this.pair.length === 2 ? `<td>${esc(C.shareCell(this.touchBoth.has(p.TractFIPS), this.shares?.[p.TractFIPS]?.both))}</td>` : "") : this.bufs.length ? `<td>${this.touch.has(p.TractFIPS) ? "Yes" : "No"}</td>` : ""}</tr>`; }).join("") +
         `</tbody></table></div>${this.bufs.length ? `<p class="colnote small">Area, not people: a “Yes” means some part of the census tract touches a buffer, not that everyone in it lives inside the buffer.</p>` : ""}${this.team && this.pair.length ? `<p class="colnote small">Water: the percents count land area, not water. Rivers, creeks and harbor water inside a census tract's boundary do not count toward its area.</p>` : ""}</details>` + (this.team ? this.teamStoreTable() : "");
@@ -914,8 +933,19 @@
       return cv;
     }
 
-    saveImage() {
-      const cv = this.renderImage(), name = (this.s.title || this.defaultTitle()).replace(/[^a-z0-9]+/gi, "_").replace(/^_|_$/g, "").slice(0, 80) || "map";
+    /** Team pages (her pick 2026-11-25, Choice 3 A): show the image first; "Save this image" saves exactly what is shown. */
+    previewImage() {
+      const cv = this.renderImage(), id = `xp-prev-${explorerCount}`;
+      const d = el("dialog", { class: "xpreview", "aria-labelledby": id });
+      d.innerHTML = `<h2 id="${id}">Check your map image before you save it</h2><img alt="Preview of the saved map image" src="${cv.toDataURL("image/png")}"><div class="row"><button class="btn" type="button" data-k="psave">Save this image</button><button class="btn ghost" type="button" data-k="pback">Back to the map</button></div>`;
+      d.addEventListener("close", () => d.remove());
+      d.querySelector("[data-k=psave]").onclick = () => { this.saveImage(cv); d.close(); };
+      d.querySelector("[data-k=pback]").onclick = () => d.close();
+      document.body.append(d); d.showModal();
+    }
+
+    saveImage(cv = this.renderImage()) {
+      const name = (this.s.title || this.defaultTitle()).replace(/[^a-z0-9]+/gi, "_").replace(/^_|_$/g, "").slice(0, 80) || "map";
       cv.toBlob(blob => { const a = el("a", { href: URL.createObjectURL(blob), download: `${name}.png` }); document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000); }, "image/png");
     }
   }
