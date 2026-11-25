@@ -132,7 +132,7 @@
       if (first) box.scrollLeft += first.getBoundingClientRect().left - box.getBoundingClientRect().left - box.clientWidth / 2 + first.offsetWidth / 2;
     }
 
-    add(name) { if (this.by[name] && !this.cols.includes(name)) { this.cols.push(name); this.draw(); this.renderTable(); this.zoomToCols(); } }
+    add(name) { if (this.by[name] && !this.cols.includes(name)) { this.cols.push(name); if (this.pick === name) this.pick = null; this.draw(); this.renderTable(); this.zoomToCols(); } }
     remove(name) { this.cols = this.cols.filter(c => c !== name); if (this.pick === name) this.pick = null; this.draw(); this.renderTable(); this.zoomToCols(); }
 
     /** Her ask 2026-11-25: back to how the tab opens: teen birth rate, no cities, all of Massachusetts. */
