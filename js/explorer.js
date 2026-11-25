@@ -260,7 +260,7 @@
       if (s.condType === "routes") {
         body = `<div class="seg" role="group" aria-label="Filter routes by"><button type="button" data-m="name" aria-pressed="${s.routeMode === "name"}">By name</button><button type="button" data-m="num" aria-pressed="${s.routeMode === "num"}">By type + number</button></div>` +
           (s.routeMode === "name"
-            ? `<label>Route_Name is any of (hold Ctrl or ⌘ to pick more than one)<select data-k="rn" multiple size="6">${this.routeNames.map(r => `<option ${s.routeNames.includes(r) ? "selected" : ""}>${esc(r)}</option>`).join("")}</select></label>`
+            ? `<label>Route_Name is any of (hold Ctrl or ⌘ to pick more than one)<select data-k="rn" multiple size="6">${this.routeOptions()}</select></label>`
             : `<div class="two"><label>ADMIN_TYPE<select data-k="at">${[[1, "1 · Interstate"], [2, "2 · U.S. route"], [3, "3 · State route"]].map(([k, v]) => `<option value="${k}" ${k == s.adminType ? "selected" : ""}>${v}</option>`).join("")}</select></label><label>RT_NUMBER<input type="text" data-k="rt" value="${esc(s.rtNumber)}"></label></div>`) +
           `<div class="muted small">${this.condCount} route${this.condCount === 1 ? "" : "s"} kept</div>`;
       } else if (s.condType === "chcs") {
@@ -300,6 +300,18 @@
       return w;
     }
 
+    /** Step 3's road list (her pick 2026-11-25, option B): the roads that cross the chosen towns come first, each
+        naming its towns, then every other major road. Worked out once per set of towns. */
+    routeOptions() {
+      const s = this.s, option = (r, label) => `<option value="${esc(r)}" ${s.routeNames.includes(r) ? "selected" : ""}>${label}</option>`;
+      if (!s.towns.length) return this.routeNames.map(r => option(r, esc(r))).join("");
+      const key = s.towns.join("|");
+      if (this.routeTownsKey !== key) { this.routeTownsKey = key; this.routeTownsMap = C.routeTowns(this.data.routes, this.sel, s.towns); }
+      const byTown = this.routeTownsMap, inTowns = this.routeNames.filter(r => byTown[r]), elsewhere = this.routeNames.filter(r => !byTown[r]);
+      return (inTowns.length ? `<optgroup label="In ${esc(C.townsPhrase(s.towns))}">${inTowns.map(r => option(r, `${esc(r)} · ${esc(byTown[r].join(" and "))}`)).join("")}</optgroup>` : "") +
+        `<optgroup label="Elsewhere in Massachusetts">${elsewhere.map(r => option(r, esc(r))).join("")}</optgroup>`;
+    }
+
     parkPicker() {
       const s = this.s, list = [...this.parkList].sort((a, b) => ((a.properties.Town || "") + (a.properties.SITE_NAME || "")).localeCompare((b.properties.Town || "") + (b.properties.SITE_NAME || "")));
       if (!s.towns.length) return `<div class="muted small">Filter to your towns in step 1 first. Then the parks near them are listed here.</div>`;
@@ -324,7 +336,7 @@
       const s = this.s, w = el("div", { class: "ctl" });
       const group = (key, text, swatch, body = "") => `<label class="check"><input type="checkbox" data-show="${key}" ${s.show.includes(key) ? "checked" : ""}> <span><i class="sw ${swatch}"></i>${text}</span></label>${s.show.includes(key) ? `<div class="sub">${body}</div>` : ""}`;
       const road = `<div class="seg" role="group" aria-label="Filter routes by"><button type="button" data-m="name" aria-pressed="${s.routeMode === "name"}">By name</button><button type="button" data-m="num" aria-pressed="${s.routeMode === "num"}">By type + number</button></div>` +
-        (s.routeMode === "name" ? `<label>Route_Name is any of (hold Ctrl or ⌘ to pick more than one)<select data-k="rn" multiple size="6">${this.routeNames.map(r => `<option ${s.routeNames.includes(r) ? "selected" : ""}>${esc(r)}</option>`).join("")}</select></label>` : `<div class="two"><label>ADMIN_TYPE<select data-k="at">${[[1, "1 · Interstate"], [2, "2 · U.S. route"], [3, "3 · State route"]].map(([k, v]) => `<option value="${k}" ${k == s.adminType ? "selected" : ""}>${v}</option>`).join("")}</select></label><label>RT_NUMBER<input type="text" data-k="rt" value="${esc(s.rtNumber)}"></label></div>`) +
+        (s.routeMode === "name" ? `<label>Route_Name is any of (hold Ctrl or ⌘ to pick more than one)<select data-k="rn" multiple size="6">${this.routeOptions()}</select></label>` : `<div class="two"><label>ADMIN_TYPE<select data-k="at">${[[1, "1 · Interstate"], [2, "2 · U.S. route"], [3, "3 · State route"]].map(([k, v]) => `<option value="${k}" ${k == s.adminType ? "selected" : ""}>${v}</option>`).join("")}</select></label><label>RT_NUMBER<input type="text" data-k="rt" value="${esc(s.rtNumber)}"></label></div>`) +
         `<div class="muted small">${this.condCount || 0} route${this.condCount === 1 ? "" : "s"} kept</div>${s.routeMode === "name" && !s.routeNames.length || s.routeMode !== "name" && !s.rtNumber ? '<div class="muted small">Choose one or more roads in the list.</div>' : ""}`;
       const parks = `<label class="check"><input type="checkbox" data-k="clip" ${s.clip ? "checked" : ""} ${s.towns.length ? "" : "disabled"}> <span>✂ Clip open space to my towns</span></label>${this.clipError ? '<div class="muted small">The page could not load the town lines. Reload the page to clip open space.</div>' : ""}<div class="two"><label>PUB_ACCESS<select data-k="pa">${ACCESS.map(([k, v]) => `<option value="${k}" ${k === s.access ? "selected" : ""}>${v}</option>`).join("")}</select></label><label>GIS_ACRES at least<input type="number" min="0" step="1" data-k="ac" value="${s.minAcres}"></label></div>${this.parkPicker()}`;
       const stores = (this.opts.stores || []).map(o => `<label class="check"><input type="checkbox" data-show="${esc(o.key)}" ${s.show.includes(o.key) ? "checked" : ""}> <span><i class="sw dot" style="background:${STORE_COLORS[o.key]}"></i>${esc(o.label)}</span>${this.storeDoc && s.towns.length ? `<span class="cnt">${C.storePlacesFor(this.storeDoc.features, [o.key], this.sel).length}</span>` : ""}</label>`).join("") + `<div class="hint small">Stores licensed to sell vapes: the state's vape list includes stores that also sell cigarettes.</div>`;

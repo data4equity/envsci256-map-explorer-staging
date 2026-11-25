@@ -83,6 +83,30 @@
     return routes.filter(f => rule.names.includes(f.properties.Route_Name));
   }
 
+  /** Her pick 2026-11-25 (option B): { road name: [towns it crosses] } for the major roads that cross the census
+      tracts of the chosen towns, towns in the order chosen. Each tract is tested on its own: a union of tracts can
+      come out wrong in turf and match every road. */
+  function routeTowns(routes, tracts, towns) {
+    const out = {};
+    if (!tracts.length) return out;
+    const boxes = tracts.map(t => [t, t.bbox || turf.bbox(t)]), area = turf.bbox(turf.featureCollection(tracts));
+    routes.forEach(route => {
+      // Cut the statewide road to the towns' area first, so each tract test runs on a short piece of it.
+      const piece = turf.bboxClip(route, area);
+      if (!piece.geometry.coordinates.length) return;
+      const box = turf.bbox(piece);
+      const crossed = new Set(boxes.filter(([, b]) => bboxesOverlap(b, box)).filter(([t]) => turf.booleanIntersects(piece, t)).map(([t]) => t.properties.City_Town));
+      const hit = towns.filter(town => crossed.has(town));
+      if (hit.length) out[route.properties.Route_Name] = [...new Set([...(out[route.properties.Route_Name] || []), ...hit])];
+    });
+    return out;
+  }
+
+  /** "Chelsea", "Chelsea or Wellesley", "Chelsea, Everett or Revere". */
+  function townsPhrase(towns) {
+    return towns.length < 2 ? (towns[0] || "") : `${towns.slice(0, -1).join(", ")} or ${towns[towns.length - 1]}`;
+  }
+
   /** Routes cut to the area around the filtered towns, so a statewide road is buffered only where it matters. */
   function clipToBbox(lines, bbox) {
     return lines.map(f => turf.bboxClip(f, bbox)).filter(f => f.geometry.coordinates.length);
@@ -369,7 +393,7 @@
     return "Sources: " + [...new Set(normalized)].join("; ") + ".";
   }
 
-  const api = { sourceLine, selectAllState, teamGroupShown, normalizeTeamLayers, TEAM_BUF_ORDER, BUF_PAIR_COLORS, STORE_TYPES, bufferPairColors, toggleBuffer, migrateTeamState, clipToTowns, mergedBuffer, polygonPieces, overlapOf, landShare, sharePercent, shareCell, tractShares, greenShare, cityGreen, estimateInside, slicePaths, listNames, storePlacesFor, placeTypes, fitProjection, pathFor, STEP_KEYS, resetStep, NO_CONDITION, RAMPS, METHODS, rampColors, breaks, classOf, paddedBbox, townsInBbox, filterRoutes, clipToBbox,
+  const api = { sourceLine, selectAllState, routeTowns, townsPhrase, teamGroupShown, normalizeTeamLayers, TEAM_BUF_ORDER, BUF_PAIR_COLORS, STORE_TYPES, bufferPairColors, toggleBuffer, migrateTeamState, clipToTowns, mergedBuffer, polygonPieces, overlapOf, landShare, sharePercent, shareCell, tractShares, greenShare, cityGreen, estimateInside, slicePaths, listNames, storePlacesFor, placeTypes, fitProjection, pathFor, STEP_KEYS, resetStep, NO_CONDITION, RAMPS, METHODS, rampColors, breaks, classOf, paddedBbox, townsInBbox, filterRoutes, clipToBbox,
     pointsInBbox, pointsInTracts, nearestEdge, storeRows, filterOpenSpace, bufferEach, touchedTracts, countByTown, touchingGroup, acsRange, encodeState, decodeState };
   if (typeof module === "object" && module.exports) module.exports = api;
   else root.ExplorerCore = api;
