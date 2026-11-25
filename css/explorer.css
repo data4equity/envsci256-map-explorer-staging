@@ -31,7 +31,8 @@ main.wrap { padding-block: 16px 40px; display: grid; gap: 14px; }
 
 /* explorer */
 .xp { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; display: grid; grid-template-columns: 300px minmax(0, 1fr); }
-.xpanel { border-right: 1px solid var(--line); overflow: auto; max-height: var(--map-h); font-size: .86rem; }
+/* The panel fills its grid row and scrolls; height 0 keeps it from setting the row's height (her report 2026-11-25). */
+.xpanel { border-right: 1px solid var(--line); overflow: auto; height: 0; min-height: 100%; font-size: .86rem; }
 .xmapcol { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) 230px; }
 .xviewbar { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--line); font-size: .82rem; }
 .xviewbar input[type=range] { width: 150px; }
@@ -195,7 +196,7 @@ select[multiple] { padding: 2px; }
   .xp { grid-template-columns: minmax(0, 1fr); }
   .xmapcol { grid-template-columns: minmax(0, 1fr); }
   .xstrip { border-left: 0; border-top: 1px solid var(--line); }
-  .xpanel { border-right: 0; border-bottom: 1px solid var(--line); max-height: none; }
+  .xpanel { border-right: 0; border-bottom: 1px solid var(--line); height: auto; min-height: 0; }
   .qgrid { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 520px) { .qgrid { grid-template-columns: 1fr; } .two { grid-template-columns: 1fr; } .xlegend { max-width: 150px; font-size: .66rem; padding: 5px 7px; } .xlegend .lt { font-size: .7rem; } }
