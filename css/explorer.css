@@ -127,7 +127,6 @@ select[multiple] { padding: 2px; }
 .sw.st { width: 10px; height: 10px; margin: 0 9px 0 3px; border-radius: 50%; border: 1.6px solid #5b2a86; background: #fff; }
 .sw.st.in { background: #5b2a86; }
 .xlegend .lsub { margin-top: 4px; font-weight: 600; }
-.scount { padding: 8px 2px 4px; }
 .xfocus { position: absolute; left: 10px; bottom: 26px; z-index: 900; background: rgba(255, 255, 255, .97); border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px; max-width: 330px; display: grid; gap: 7px; font-size: .78rem; box-shadow: 0 4px 14px rgba(0, 0, 0, .12); }
 .xfocus[hidden] { display: none; }
 .fch { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
